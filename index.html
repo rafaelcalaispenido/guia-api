@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Guia de Implementação — API eNotas Emissor</title>
+<link rel="icon" type="image/png" href="assets/logo-enotas.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -139,7 +140,7 @@
   .side-nav-btn:hover { background: var(--c-surface); color: var(--c-text); }
   .side-nav-btn.active { background: var(--c-surface); color: var(--c-primary); box-shadow: var(--shadow-sm); }
   .side-num {
-    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    min-width: 20px; height: 20px; padding: 0 3px; border-radius: 99px; flex-shrink: 0;
     background: var(--c-border); color: var(--c-text-faint);
     font-size: 10.5px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
@@ -259,6 +260,18 @@
   .endpoint-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
   .endpoint-path { font-family: ui-monospace, monospace; font-size: 14.5px; font-weight: 600; }
   .endpoint-desc { font-size: 13.8px; color: var(--c-text-muted); margin-bottom: 16px; }
+
+  /* ─── LANGUAGE TABS (JSON / cURL / JavaScript) ─────────── */
+  .lang-tabs { display: flex; gap: 4px; margin: 10px 0 0; }
+  .lang-tab-btn {
+    font-family: inherit; border: none; cursor: pointer; background: var(--c-surface-2);
+    color: var(--c-text-muted); font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+    padding: 7px 14px; border-radius: 8px 8px 0 0;
+  }
+  .lang-tab-btn.active { background: var(--c-code-bg); color: var(--c-code-text); }
+  .lang-panel { display: none; }
+  .lang-panel.active { display: block; }
+  .lang-panel .code-block { margin-top: 0; border-top-left-radius: 0; }
 
   /* ─── CODE BLOCKS ──────────────────────────────────────── */
   .code-block { border-radius: 12px; overflow: hidden; border: 1px solid var(--c-border); margin: 10px 0 16px; }
@@ -408,9 +421,39 @@
   @media (max-width: 640px) {
     .section-title { font-size: 22px; }
   }
+
+  /* ─── LOADING SCREEN ───────────────────────────────────── */
+  #app-loading {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--c-page-bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    opacity: 1; visibility: visible;
+    transition: opacity .5s ease, visibility .5s ease;
+  }
+  #app-loading.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  #app-loading img { width: 76px; height: 76px; object-fit: contain; animation: loading-pulse 1.4s ease-in-out infinite; }
+  @keyframes loading-pulse {
+    0%, 100% { transform: scale(1); opacity: .8; }
+    50% { transform: scale(1.14); opacity: 1; }
+  }
+  .loading-bar-track { width: 150px; height: 3px; border-radius: 99px; background: rgba(255,255,255,.16); overflow: hidden; }
+  .loading-bar-fill { height: 100%; width: 0%; background: #fff; border-radius: 99px; animation: loading-fill 3s ease forwards; }
+  @keyframes loading-fill { from { width: 0%; } to { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    #app-loading img { animation: none; }
+    .loading-bar-fill { animation-duration: .01ms; animation-fill-mode: forwards; }
+  }
 </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- LOADING SCREEN                                          -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div id="app-loading">
+  <img src="assets/logo-enotas.png" alt="eNotas">
+  <div class="loading-bar-track"><div class="loading-bar-fill"></div></div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════ -->
 <!-- APP CARD                                                -->
@@ -447,6 +490,7 @@
       <button class="side-nav-btn" data-target="sec-postman"><span class="side-num">7</span>Postman</button>
       <button class="side-nav-btn" data-target="sec-errors"><span class="side-num">8</span>Erros</button>
       <button class="side-nav-btn" data-target="sec-flow"><span class="side-num">9</span>Fluxo</button>
+      <button class="side-nav-btn" data-target="sec-webhook"><span class="side-num">10</span>Webhook</button>
     </nav>
 
     <main class="content-panel">
@@ -460,7 +504,7 @@
     <p class="section-lead">O que você precisa ter em mãos antes de iniciar a integração com a API eNotas Emissor.</p>
 
     <div class="callout warning">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="16.7" r="1.15" fill="currentColor" stroke="none"/></svg>
       <div><strong>Apenas os planos Business e Enterprise</strong> contemplam a utilização e o acesso à API. Se sua conta está em outro plano, entre em contato com o time financeiro da eNotas para alteração de plano antes de seguir.</div>
     </div>
 
@@ -540,7 +584,7 @@
       <pre><code>https://app.enotas.com.br/api</code></pre>
     </div>
     <div class="callout info">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="1.15" fill="currentColor" stroke="none"/></svg>
       <div>Se você utilizar qualquer outra URL base, receberá <strong>404 – Not Found</strong> ao enviar a requisição.</div>
     </div>
 
@@ -563,7 +607,7 @@
     </div>
 
     <div class="callout warning">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="16.7" r="1.15" fill="currentColor" stroke="none"/></svg>
       <div><strong>Erro comum:</strong> espaços em branco ou quebras de linha acidentais no valor da API Key colada no header. Sempre confira se não sobrou nenhum caractere extra antes de enviar.</div>
     </div>
 
@@ -605,6 +649,12 @@
       <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/clientes</span></div>
       <p class="endpoint-desc">Cria ou atualiza um cliente (tomador da nota). Se o tomador for Pessoa Jurídica, informe o CNPJ — ao enviar a nota para emissão, o sistema busca automaticamente os dados na Receita Federal.</p>
 
+      <div class="lang-tabs" data-tabgroup="lang-cliente">
+        <button class="lang-tab-btn active" data-panel="lang-cliente-json">JSON</button>
+        <button class="lang-tab-btn" data-panel="lang-cliente-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-cliente-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-cliente-json" data-group-panel="lang-cliente">
       <div class="code-block">
         <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
         <pre><code class="code-json">{
@@ -628,6 +678,62 @@
     "cep": "30130110"
   }
 }</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-cliente-curl" data-group-panel="lang-cliente">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/clientes \
+  -H "Authorization: Basic {sua-API-Key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cpfCnpj": "22255588859",
+    "nome": "Cliente Teste API",
+    "email": "teste@enotas.com.br",
+    "telefone": "31231231231",
+    "quandoEmitirNFe": 1,
+    "enviarNfePorEmail": true,
+    "endereco": {
+      "uf": "MG",
+      "cidade": "Belo Horizonte",
+      "logradouro": "Rua teste",
+      "numero": "427",
+      "bairro": "Centro",
+      "cep": "30130110"
+    }
+  }'</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-cliente-js" data-group-panel="lang-cliente">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const response = await fetch("https://app.enotas.com.br/api/clientes", {
+  method: "POST",
+  headers: {
+    "Authorization": "Basic {sua-API-Key}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    cpfCnpj: "22255588859",
+    nome: "Cliente Teste API",
+    email: "teste@enotas.com.br",
+    telefone: "31231231231",
+    quandoEmitirNFe: 1,
+    enviarNfePorEmail: true,
+    endereco: {
+      uf: "MG",
+      cidade: "Belo Horizonte",
+      logradouro: "Rua teste",
+      numero: "427",
+      bairro: "Centro",
+      cep: "30130110"
+    }
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
       </div>
 
       <div class="notes-list">
@@ -667,6 +773,12 @@
       <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/produtos</span></div>
       <p class="endpoint-desc">Cria ou atualiza um produto/serviço. O retorno inclui o identificador único do produto (id), usado depois na criação da venda.</p>
 
+      <div class="lang-tabs" data-tabgroup="lang-produto">
+        <button class="lang-tab-btn active" data-panel="lang-produto-json">JSON</button>
+        <button class="lang-tab-btn" data-panel="lang-produto-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-produto-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-produto-json" data-group-panel="lang-produto">
       <div class="code-block">
         <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
         <pre><code class="code-json">{
@@ -678,6 +790,46 @@
   "aliquotaIss": "2.00",
   "tags": "adestramento;cursos"
 }</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-produto-curl" data-group-panel="lang-produto">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/produtos \
+  -H "Authorization: Basic {sua-API-Key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nome": "Como adestrar cachorros",
+    "idExterno": "12345678",
+    "tipoNFe": 0,
+    "valorTotal": 29,
+    "diasGarantia": 7,
+    "tags": "adestramento;cursos"
+  }'</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-produto-js" data-group-panel="lang-produto">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const response = await fetch("https://app.enotas.com.br/api/produtos", {
+  method: "POST",
+  headers: {
+    "Authorization": "Basic {sua-API-Key}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    nome: "Como adestrar cachorros",
+    idExterno: "12345678",
+    tipoNFe: 0,
+    valorTotal: 29,
+    diasGarantia: 7,
+    tags: "adestramento;cursos"
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
       </div>
 
       <div class="notes-list">
@@ -720,6 +872,12 @@
       <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/vendas</span></div>
       <p class="endpoint-desc">Cria ou atualiza uma venda. Você pode enviar cliente e produto completos (criação simultânea) ou apenas seus IDs, se já existirem. Veja mais combinações na seção <strong>Exemplos Práticos</strong>.</p>
 
+      <div class="lang-tabs" data-tabgroup="lang-venda">
+        <button class="lang-tab-btn active" data-panel="lang-venda-json">JSON</button>
+        <button class="lang-tab-btn" data-panel="lang-venda-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-venda-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-venda-json" data-group-panel="lang-venda">
       <div class="code-block">
         <div class="code-head"><span>Request Body — cliente e produto novos</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
         <pre><code class="code-json">{
@@ -756,6 +914,50 @@
   "tags": "venda online"
 }</code></pre>
       </div>
+      </div>
+      <div class="lang-panel" id="lang-venda-curl" data-group-panel="lang-venda">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/vendas \
+  -H "Authorization: Basic {sua-API-Key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cliente": { "id": "12c4a7c8-4dad-4bad-b0f9-dd3e7f1b0500" },
+    "produto": { "idExterno": "324" },
+    "data": "01/03/2026",
+    "dataCompetencia": "01/03/2026",
+    "discriminacao": "Curso de adestramento canino",
+    "valorTotal": 29,
+    "quandoEmitirNFe": 0,
+    "meioPagamento": 9
+  }'</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-venda-js" data-group-panel="lang-venda">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const response = await fetch("https://app.enotas.com.br/api/vendas", {
+  method: "POST",
+  headers: {
+    "Authorization": "Basic {sua-API-Key}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    cliente: { id: "12c4a7c8-4dad-4bad-b0f9-dd3e7f1b0500" },
+    produto: { idExterno: "324" },
+    data: "01/03/2026",
+    dataCompetencia: "01/03/2026",
+    discriminacao: "Curso de adestramento canino",
+    valorTotal: 29,
+    quandoEmitirNFe: 0,
+    meioPagamento: 9
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
+      </div>
 
       <div class="notes-list">
         <div class="notes-list-title">Campos importantes</div>
@@ -787,7 +989,7 @@
           <thead><tr><th>Parâmetro</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
           <tbody>
             <tr><td><code>pageNumber</code></td><td>Sim</td><td>Número da página, começando em 0.</td></tr>
-            <tr><td><code>pageSize</code></td><td>Sim</td><td>Quantidade de itens por página.</td></tr>
+            <tr><td><code>pageSize</code></td><td>Sim</td><td>Quantidade de itens por página. <strong>Máximo de 150 itens.</strong></td></tr>
             <tr><td><code>filter</code></td><td>Não</td><td>Filtros sobre a venda: <code>data</code>, <code>dataPagamento</code>, <code>situacao</code>, <code>tags/id</code>, <code>cliente/id</code>, <code>cliente/nome</code>, <code>cliente/cpfCnpj</code>, <code>produto/id</code>.</td></tr>
             <tr><td><code>nfeFilter</code></td><td>Não</td><td>Filtros sobre a nota: <code>nfe/situacao</code>, <code>nfe/dataCompetencia</code>, <code>nfe/prefeituraNumero</code>, <code>nfe/rpsNumero</code>.</td></tr>
             <tr><td><code>tagFilter</code></td><td>Não</td><td>Filtro por tag numérica. Ex.: <code>tags/id eq 25358</code>.</td></tr>
@@ -817,6 +1019,36 @@
         <div class="code-head"><span>Consulta venda por ID</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
         <pre><code>GET /vendas/{vendaId}</code></pre>
       </div>
+
+      <h3 class="subhead">cURL / JavaScript</h3>
+      <div class="lang-tabs" data-tabgroup="lang-consultar">
+        <button class="lang-tab-btn active" data-panel="lang-consultar-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-consultar-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-consultar-curl" data-group-panel="lang-consultar">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X GET "https://app.enotas.com.br/api/vendas/getFilterBy?pageNumber=0&pageSize=10&orderBy=data desc" \
+  -H "Authorization: Basic {sua-API-Key}" \
+  -H "Accept: application/json"</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-consultar-js" data-group-panel="lang-consultar">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const params = new URLSearchParams({ pageNumber: 0, pageSize: 10, orderBy: "data desc" });
+
+const response = await fetch(`https://app.enotas.com.br/api/vendas/getFilterBy?${params}`, {
+  headers: {
+    "Authorization": "Basic {sua-API-Key}",
+    "Accept": "application/json"
+  }
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
+      </div>
     </div>
 
     <!-- EMITIR -->
@@ -824,6 +1056,12 @@
       <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/vendas/emitirNFe</span></div>
       <p class="endpoint-desc">Envia uma ou mais vendas para emissão de NFe. Útil quando <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">quandoEmitirNFe</code> foi configurado como manual/em aberto, ou para reenviar notas com falha.</p>
 
+      <div class="lang-tabs" data-tabgroup="lang-emitir">
+        <button class="lang-tab-btn active" data-panel="lang-emitir-json">JSON</button>
+        <button class="lang-tab-btn" data-panel="lang-emitir-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-emitir-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-emitir-json" data-group-panel="lang-emitir">
       <div class="code-block">
         <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
         <pre><code class="code-json">{
@@ -835,6 +1073,40 @@
   "enviarNFeCliente": true
 }</code></pre>
       </div>
+      </div>
+      <div class="lang-panel" id="lang-emitir-curl" data-group-panel="lang-emitir">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/vendas/emitirNFe \
+  -H "Authorization: Basic {sua-API-Key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "vendasIds": ["79f35850-08de-af9f-4f32-f28a4bff2bf0"],
+    "dataCompetencia": "04/03/2026",
+    "enviarNFeCliente": true
+  }'</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-emitir-js" data-group-panel="lang-emitir">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const response = await fetch("https://app.enotas.com.br/api/vendas/emitirNFe", {
+  method: "POST",
+  headers: {
+    "Authorization": "Basic {sua-API-Key}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    vendasIds: ["79f35850-08de-af9f-4f32-f28a4bff2bf0"],
+    dataCompetencia: "04/03/2026",
+    enviarNFeCliente: true
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
+      </div>
 
       <div class="code-block">
         <div class="code-head"><span>Resposta 200 — quantidade enviada para emissão</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
@@ -842,7 +1114,7 @@
       </div>
 
       <div class="callout info">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="1.15" fill="currentColor" stroke="none"/></svg>
         <div>Endpoint auxiliar: <code>POST /vendas/enviarnfeporemail</code> com <code>{"vendaId": "uuid"}</code> reenvia o PDF da nota já emitida por e-mail ao tomador.</div>
       </div>
     </div>
@@ -852,9 +1124,37 @@
       <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/vendas/{vendaId}/cancelar</span></div>
       <p class="endpoint-desc">Cancela uma venda e solicita o cancelamento da nota fiscal associada junto ao órgão emissor (prefeitura ou Sefaz).</p>
 
+      <div class="lang-tabs" data-tabgroup="lang-cancelar">
+        <button class="lang-tab-btn active" data-panel="lang-cancelar-path">Path</button>
+        <button class="lang-tab-btn" data-panel="lang-cancelar-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-cancelar-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-cancelar-path" data-group-panel="lang-cancelar">
       <div class="code-block">
         <div class="code-head"><span>Path Parameter</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
         <pre><code>POST /vendas/79f35850-08de-af9f-4f32-f28a4bff2bf0/cancelar</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-cancelar-curl" data-group-panel="lang-cancelar">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/vendas/79f35850-08de-af9f-4f32-f28a4bff2bf0/cancelar \
+  -H "Authorization: Basic {sua-API-Key}"</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-cancelar-js" data-group-panel="lang-cancelar">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const vendaId = "79f35850-08de-af9f-4f32-f28a4bff2bf0";
+
+const response = await fetch(`https://app.enotas.com.br/api/vendas/${vendaId}/cancelar`, {
+  method: "POST",
+  headers: { "Authorization": "Basic {sua-API-Key}" }
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
       </div>
 
       <div class="code-block">
@@ -865,7 +1165,7 @@
       </div>
 
       <div class="callout danger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="16.7" r="1.15" fill="currentColor" stroke="none"/></svg>
         <div><strong>Atenção:</strong> algumas prefeituras não suportam cancelamento ou têm prazo curto para isso. A <strong>NF-e de Produto tem prazo de 24h</strong> para ser cancelada após a emissão. Cancelar a venda não garante que a nota também será cancelada — acompanhe <code>nfe.situacao</code> para confirmar.</div>
       </div>
     </div>
@@ -1034,7 +1334,7 @@
 }</code></pre>
       </div>
       <div class="callout info">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="1.15" fill="currentColor" stroke="none"/></svg>
         <div>Ao referenciar um produto já existente pelo <code>idExterno</code>, ele precisa ter sido criado previamente via <code>POST /produtos</code> com esse mesmo <code>idExterno</code>.</div>
       </div>
     </div>
@@ -1241,7 +1541,7 @@
           <div class="pm-step-title">Substitua pela sua API Key</div>
           <div class="pm-step-text">Edite a variável <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">apiKey</code> do Environment e cole sua chave de empresa.</div>
           <div class="callout warning">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="16.7" r="1.15" fill="currentColor" stroke="none"/></svg>
             <div>Apague qualquer seta, marcação ou espaço extra colado junto ao valor da API Key. Um caractere invisível a mais já é suficiente para gerar o erro <code>AUT002</code>.</div>
           </div>
         </div>
@@ -1367,8 +1667,278 @@
     </div>
 
     <div class="callout info" style="margin-top:24px;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <div>Este guia resume os pontos mais usados no dia a dia da integração. Para casos avançados (Split de NF-e, tributação municipal detalhada, webhooks), consulte a documentação oficial da eNotas ou acione o suporte técnico.</div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="1.15" fill="currentColor" stroke="none"/></svg>
+      <div>Este guia resume os pontos mais usados no dia a dia da integração. Para casos avançados (Split de NF-e, tributação municipal detalhada), consulte a documentação oficial da eNotas ou acione o suporte técnico. Para receber atualizações em tempo real sem precisar consultar a API, veja a seção <strong>10 · Webhook</strong>.</div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 10. WEBHOOK                                          -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-webhook">
+    <p class="section-eyebrow">Notificações em tempo real</p>
+    <h1 class="section-title">Webhook</h1>
+    <p class="section-lead">Alternativa a ficar consultando <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">GET /vendas/getFilterBy</code> — cadastre uma URL e a eNotas envia um HTTP POST automaticamente sempre que a venda ou a nota fiscal mudar de situação.</p>
+
+    <div class="callout info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.5" r="1.15" fill="currentColor" stroke="none"/></svg>
+      <div>Usa a mesma <strong>URL base</strong>, <strong>autenticação Basic</strong> e API Key da seção 2. O único endereço específico é <code>https://app.enotas.com.br/api/webhooks</code>.</div>
+    </div>
+
+    <h3 class="subhead">Baixar collection de Webhook</h3>
+    <p style="font-size:13.8px;color:var(--c-text-muted);margin-bottom:10px;">Assim como na seção Postman, existe uma collection própria para os endpoints de webhook.</p>
+    <a class="download-btn" href="assets/enotas-webhook-postman-collection.json" download="ANEXO 02 API eNotas Emissor - Webhook.postman_collection.json">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Baixar collection de Webhook (.json)
+    </a>
+
+    <h3 class="subhead" style="margin-top:28px;">Eventos disponíveis</h3>
+    <p style="font-size:13.8px;color:var(--c-text-muted);margin-bottom:10px;">Informados no array <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">events</code> ao criar o webhook — cadastre só os que fizerem sentido para o seu sistema.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Evento</th><th>Disparado quando…</th></tr></thead>
+        <tbody>
+          <tr><td><code>VendaEmGarantia</code></td><td>A venda entra em período de garantia.</td></tr>
+          <tr><td><code>VendaCompleta</code></td><td>A venda é confirmada e a garantia (se houver) já venceu.</td></tr>
+          <tr><td><code>VendaCancelada</code></td><td>A venda é cancelada.</td></tr>
+          <tr><td><code>NFeEmProcessoDeEmissao</code></td><td>A nota entra em processamento na prefeitura/Sefaz.</td></tr>
+          <tr><td><code>NFeEmitida</code></td><td>A nota é emitida com sucesso.</td></tr>
+          <tr><td><code>NFeFalhaAoEmitir</code></td><td>A emissão retorna com erro.</td></tr>
+          <tr><td><code>NFeEmProcessoDeCancelamento</code></td><td>O cancelamento da nota está em andamento.</td></tr>
+          <tr><td><code>NFeCancelada</code></td><td>O cancelamento da nota é confirmado.</td></tr>
+          <tr><td><code>NFeFalhaAoCancelar</code></td><td>A tentativa de cancelamento é recusada.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Endpoints</h3>
+    <div class="endpoint-tabs" data-group="webhook">
+      <button class="endpoint-tab-btn active" data-panel="wh-criar"><span class="method post">POST</span>/webhooks</button>
+      <button class="endpoint-tab-btn" data-panel="wh-consultar"><span class="method get">GET</span>/webhooks/{id}</button>
+      <button class="endpoint-tab-btn" data-panel="wh-listar"><span class="method get">GET</span>/getFilterBy</button>
+      <button class="endpoint-tab-btn" data-panel="wh-tentativas"><span class="method get">GET</span>/tentativas</button>
+      <button class="endpoint-tab-btn" data-panel="wh-reenviar"><span class="method post">POST</span>/reenviar</button>
+    </div>
+
+    <!-- CRIAR WEBHOOK -->
+    <div class="endpoint-panel active" id="wh-criar" data-group-panel="webhook">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/webhooks</span></div>
+      <p class="endpoint-desc">Insere ou atualiza um webhook. O retorno inclui o identificador único do webhook.</p>
+
+      <div class="lang-tabs" data-tabgroup="lang-wh-criar">
+        <button class="lang-tab-btn active" data-panel="lang-wh-criar-json">JSON</button>
+        <button class="lang-tab-btn" data-panel="lang-wh-criar-curl">cURL</button>
+        <button class="lang-tab-btn" data-panel="lang-wh-criar-js">JavaScript</button>
+      </div>
+      <div class="lang-panel active" id="lang-wh-criar-json" data-group-panel="lang-wh-criar">
+      <div class="code-block">
+        <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "uri": "https://seu-endpoint.com/webhook-enotas",
+  "events": [
+    "VendaEmGarantia", "VendaCompleta", "VendaCancelada",
+    "NFeEmProcessoDeEmissao", "NFeEmitida", "NFeFalhaAoEmitir",
+    "NFeEmProcessoDeCancelamento", "NFeCancelada", "NFeFalhaAoCancelar"
+  ],
+  "enabled": true
+}</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-wh-criar-curl" data-group-panel="lang-wh-criar">
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/webhooks \
+  -H "Authorization: Basic {sua-API-Key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "uri": "https://seu-endpoint.com/webhook-enotas",
+    "events": ["NFeEmitida", "NFeFalhaAoEmitir", "NFeCancelada"],
+    "enabled": true
+  }'</code></pre>
+      </div>
+      </div>
+      <div class="lang-panel" id="lang-wh-criar-js" data-group-panel="lang-wh-criar">
+      <div class="code-block">
+        <div class="code-head"><span>JavaScript (fetch)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>const response = await fetch("https://app.enotas.com.br/api/webhooks", {
+  method: "POST",
+  headers: {
+    "Authorization": "Basic {sua-API-Key}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    uri: "https://seu-endpoint.com/webhook-enotas",
+    events: ["NFeEmitida", "NFeFalhaAoEmitir", "NFeCancelada"],
+    enabled: true
+  })
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "webHookId": "ffdb13f4-4edc-4d84-88d8-91478f220500"
+}</code></pre>
+      </div>
+
+      <div class="notes-list">
+        <div class="notes-list-title">Campos importantes</div>
+        <div class="notes-grid">
+          <div class="note-item"><code>uri</code>Endereço HTTP(S) que receberá o POST.</div>
+          <div class="note-item"><code>events</code>Lista de eventos que disparam o envio.</div>
+          <div class="note-item"><code>enabled</code>Ativa/desativa o webhook sem excluí-lo.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONSULTAR WEBHOOK -->
+    <div class="endpoint-panel" id="wh-consultar" data-group-panel="webhook">
+      <div class="endpoint-head"><span class="method get">GET</span><span class="endpoint-path">/webhooks/{webHookId}</span></div>
+      <p class="endpoint-desc">Recupera informações do webhook pelo seu identificador único.</p>
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "id": "ffdb13f4-4edc-4d84-88d8-91478f220500",
+  "uri": "https://seu-endpoint.com/webhook-enotas",
+  "token": null,
+  "events": ["VendaEmGarantia", "VendaCompleta", "VendaCancelada"],
+  "enabled": true
+}</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X GET https://app.enotas.com.br/api/webhooks/ffdb13f4-4edc-4d84-88d8-91478f220500 \
+  -H "Authorization: Basic {sua-API-Key}"</code></pre>
+      </div>
+    </div>
+
+    <!-- LISTAR WEBHOOKS -->
+    <div class="endpoint-panel" id="wh-listar" data-group-panel="webhook">
+      <div class="endpoint-head"><span class="method get">GET</span><span class="endpoint-path">/webhooks/getFilterBy</span></div>
+      <p class="endpoint-desc">Retorna uma lista de webhooks cadastrados na empresa pelo critério de pesquisa e paginação definidos.</p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Parâmetro</th><th>Descrição</th></tr></thead>
+          <tbody>
+            <tr><td><code>pageNumber</code></td><td>Número da página, começando em 0.</td></tr>
+            <tr><td><code>pageSize</code></td><td>Total de itens por página.</td></tr>
+            <tr><td><code>filter</code></td><td>Único campo suportado: <code>enabled</code>. Ex.: <code>enabled eq true</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "totalRecords": 1,
+  "data": [{
+    "id": "ffdb13f4-4edc-4d84-88d8-91478f220500",
+    "uri": "https://seu-endpoint.com/webhook-enotas",
+    "token": null,
+    "events": ["VendaEmGarantia", "VendaCompleta", "VendaCancelada"],
+    "enabled": true
+  }]
+}</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X GET "https://app.enotas.com.br/api/webhooks/getFilterBy?pageNumber=0&pageSize=10&filter=enabled eq true" \
+  -H "Authorization: Basic {sua-API-Key}"</code></pre>
+      </div>
+    </div>
+
+    <!-- TENTATIVAS -->
+    <div class="endpoint-panel" id="wh-tentativas" data-group-panel="webhook">
+      <div class="endpoint-head"><span class="method get">GET</span><span class="endpoint-path">/webhooks/{vendaId}/tentativas</span></div>
+      <p class="endpoint-desc">Recupera todas as tentativas de envio de webhook para uma venda específica — útil para depurar por que uma notificação não chegou.</p>
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "totalRecords": 1,
+  "data": [{
+    "id": "92a4810a-d751-4c77-8a4e-7c619d220500",
+    "webHookId": "ffdb13f4-4edc-4d84-88d8-91478f220500",
+    "vendaId": "b8b9c80b-67b2-40cc-9f68-39003b180500",
+    "firstTryDate": "2026-03-01T22:57:03.973",
+    "lastTryDate": "2026-03-01T23:02:31.063",
+    "responseStatus": 200,
+    "success": true,
+    "processed": true,
+    "attempts": 1
+  }]
+}</code></pre>
+      </div>
+      <div class="notes-list">
+        <div class="notes-list-title">Campos importantes</div>
+        <div class="notes-grid">
+          <div class="note-item"><code>responseStatus</code>Status HTTP retornado pelo seu endpoint.</div>
+          <div class="note-item"><code>success</code>Se o envio foi confirmado com sucesso.</div>
+          <div class="note-item"><code>attempts</code>Quantas vezes a eNotas tentou entregar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REENVIAR -->
+    <div class="endpoint-panel" id="wh-reenviar" data-group-panel="webhook">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/webhooks/{vendaId}/reenviar</span></div>
+      <p class="endpoint-desc">Reenvia os dados de uma venda específica para os webhooks configurados com os eventos que a venda se encontra no momento. Nada é retornado no corpo.</p>
+      <div class="code-block">
+        <div class="code-head"><span>cURL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>curl -X POST https://app.enotas.com.br/api/webhooks/79f35850-08de-af9f-4f32-f28a4bff2bf0/reenviar \
+  -H "Authorization: Basic {sua-API-Key}"</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subhead">Payload enviado ao seu endpoint</h3>
+    <p style="font-size:13.8px;color:var(--c-text-muted);margin-bottom:10px;">Quando a venda ou a nota muda para uma situação cadastrada em <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">events</code>, a eNotas dispara um <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">POST</code> para a sua <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">uri</code> com este formato:</p>
+    <div class="code-block">
+      <div class="code-head"><span>POST enviado pela eNotas</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+      <pre><code class="code-json">{
+  "id": "8d20dc05-441e-4fc5-8c39-4925d5750500",
+  "dataVenda": "14/03/2026",
+  "idExterno": null,
+  "situacao": "Completa",
+  "valorTotal": 1,
+  "meioDePagamento": "NaoInformado",
+  "nfe": {
+    "situacao": "EmProcessoDeEmissao",
+    "motivoSituacao": null,
+    "valorTotal": 1,
+    "numero": null,
+    "dataAutorizacao": null,
+    "linkImpressao": null,
+    "linkXml": null
+  },
+  "cliente": {
+    "id": "f57cf522-6afa-4017-9ea8-ad2527b10300",
+    "nome": "Cliente Teste",
+    "email": "cliente@exemplo.com.br",
+    "cpfCnpj": "47107556630",
+    "endereco": {
+      "logradouro": "Rua Teste",
+      "numero": "123",
+      "bairro": "Centro",
+      "cidade": "Belo Horizonte",
+      "uf": "MG",
+      "pais": "Brasil",
+      "codigoPostal": "30575160"
+    }
+  },
+  "produto": {
+    "id": "7ba47570-5d2c-4a5a-90ce-ea3727b10300",
+    "descricao": "Produto Teste Padrão",
+    "idExterno": "1"
+  },
+  "canal": null
+}</code></pre>
+    </div>
+
+    <div class="callout warning">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="16.7" r="1.15" fill="currentColor" stroke="none"/></svg>
+      <div>Seu endpoint precisa responder com status <strong>200</strong> para a eNotas considerar a entrega bem-sucedida. Use <code>GET /webhooks/{vendaId}/tentativas</code> para investigar reenvios com falha.</div>
     </div>
   </section>
 
@@ -1382,6 +1952,24 @@
 </div><!-- /app-card -->
 
 <script>
+  /* ─── LOADING SCREEN ───────────────────────────────── */
+  (function () {
+    function dismissLoader() {
+      var loader = document.getElementById('app-loading');
+      if (!loader) return;
+      loader.classList.add('hidden');
+      setTimeout(function () { loader.remove(); }, 600);
+    }
+    var start = Date.now();
+    window.addEventListener('load', function () {
+      var elapsed = Date.now() - start;
+      var remaining = Math.max(3000 - elapsed, 0);
+      setTimeout(dismissLoader, remaining);
+    });
+    // safety net in case 'load' already fired or never fires as expected
+    setTimeout(dismissLoader, 4000);
+  })();
+
   /* ─── THEME ────────────────────────────────────────── */
   (function initTheme() {
     var saved = localStorage.getItem('enotas-guide-theme');
@@ -1422,18 +2010,20 @@
       var buttons = group.querySelectorAll('[data-panel]');
       buttons.forEach(function (btn) {
         btn.addEventListener('click', function () {
+          var panel = document.getElementById(btn.dataset.panel);
+          if (!panel) return;
+          var groupValue = panel.getAttribute(panelAttr);
           buttons.forEach(function (b) { b.classList.remove('active'); });
           btn.classList.add('active');
-          var panelId = btn.dataset.panel;
-          document.querySelectorAll('[' + panelAttr + ']').forEach(function (p) { p.classList.remove('active'); });
-          var panel = document.getElementById(panelId);
-          if (panel) panel.classList.add('active');
+          document.querySelectorAll('[' + panelAttr + '="' + groupValue + '"]').forEach(function (p) { p.classList.remove('active'); });
+          panel.classList.add('active');
         });
       });
     });
   }
   wireTabGroup('.endpoint-tabs', 'data-group-panel');
   wireTabGroup('.scenario-bar', 'data-group-panel');
+  wireTabGroup('.lang-tabs', 'data-group-panel');
 
   /* ─── ACCORDION ────────────────────────────────────── */
   function toggleAcc(el) {
