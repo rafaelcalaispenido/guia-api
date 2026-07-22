@@ -1,0 +1,585 @@
+{
+	"info": {
+		"_postman_id": "704dd4eb-ffd0-4b81-adc9-ad028340e7a8",
+		"name": "API eNotas Emissor",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16443479"
+	},
+	"item": [
+		{
+			"name": "Vendas",
+			"item": [
+				{
+					"name": "Criar/Atualizar Venda",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic {{apiKey}}"
+							},
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cliente\": {\n        \"id\": \"12c4a7c8-4dad-4bad-b0f9-dd3e7f1b0500\"\n    },\n    \"data\": \"22/07/2019\",\n    \"vencimento\": \"22/08/2019\",\n    \"produto\": {\n        \"nome\": \"Venda Teste_Postman\",\n        \"idExterno\": \"500\",\n        \"valorTotal\": null,\n        \"diasGarantia\": null,\n        \"tags\": null\n    },\n    \"valorTotal\": 10,\n    \"quandoEmitirNFe\": 2,\n    \"enviarNFeCliente\": true,\n    \"meioPagamento\": 3,\n    \"tags\": \"exemplodevenda;exemplodetag2\",\n    \"municipioPrestacao\": {\n        \"nome\": \"Belo Horizonte\",\n        \"codigoIbge\": 3106200\n    },\n    \"dataCompetencia\": \"22/08/2019\",\n    \"discriminacao\": \"Teste API Emissor via Postman\",\n    \"valorTotalNFe\": 10,\n    \"aliquotaIss\": null,\n    \"valorIss\": null,\n    \"issRetidoFonte\": false,\n    \"deducoes\": null,\n    \"observacoes\": null,\n    \"porcentagemCofins\": 1,\n    \"porcentagemCsll\": 10,\n    \"porcentagemInss\": 15,\n    \"porcentagemIr\": 20,\n    \"porcentagemPis\": 12\n}"
+						},
+						"url": {
+							"raw": "https://app.enotas.com.br/api/vendas/",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"vendas",
+								""
+							]
+						},
+						"description": "Insere ou atualiza uma venda. O retorno inclui o identificador único da venda."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Venda",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic {{apiKey}}"
+							},
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "https://app.enotas.com.br/api/vendas/:vendaId",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"vendas",
+								":vendaId"
+							],
+							"variable": [
+								{
+									"key": "vendaId",
+									"value": "",
+									"description": "Identificador único da venda."
+								}
+							]
+						},
+						"description": "Recupera informações da venda pelo seu identificado único. O retorno inclui os dados da venda requisitada."
+					},
+					"response": []
+				},
+				{
+					"name": "Filtrar Vendas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"Situação da NFe\r",
+									"\r",
+									"Pendente 0\r",
+									"EmProcessoDeEmissao 1\r",
+									"Emitida 2\r",
+									"FalhaAoEmitir 3\r",
+									"EmProcessoDeCancelamento 4\r",
+									"Cancelada 5\r",
+									"FalhaAoCancelar 6\r",
+									"NaoEmitir 7\r",
+									"EnviadoPorEmail 8\r",
+									"\r",
+									"_-_-_-_-_-_-_-_-_-_-_-_\r",
+									"\r",
+									"Situação da venda\r",
+									"\r",
+									"EmAberto 0\r",
+									"Vencida 1\r",
+									"EmGarantia 2\r",
+									"Completa 3\r",
+									"Reembolsada 4\r",
+									"Cancelada 5"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic {{apiKey}}"
+							},
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "https://app.enotas.com.br/api/vendas/getFilterBy?pageNumber=0&pageSize=10&filter=data ge '2019-07-01' and data le '2019-07-31'&orderBy=data desc",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"vendas",
+								"getFilterBy"
+							],
+							"query": [
+								{
+									"key": "pageNumber",
+									"value": "0",
+									"description": "Número da página, sendo 0 o número da primeira página."
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Total de itens a serem retornados por página (máx 150)"
+								},
+								{
+									"key": "filter",
+									"value": "data ge '2019-07-01' and data le '2019-07-31'",
+									"description": "Filtro para realização da pesquisa."
+								},
+								{
+									"key": "orderBy",
+									"value": "data desc",
+									"description": "Ordenação dos itens retornados."
+								}
+							]
+						},
+						"description": "Retorna uma lista de vendas encontradas pelo critério de pesquisa e paginação definidos."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar Venda",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic {{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://app.enotas.com.br/api/vendas/:vendaId/cancelar",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"vendas",
+								":vendaId",
+								"cancelar"
+							],
+							"variable": [
+								{
+									"key": "vendaId",
+									"value": "",
+									"description": "Identificador único da venda."
+								}
+							]
+						},
+						"description": "Cancelar uma venda e sua nota fiscal caso a venda tenha nota fiscal emitida. O retorno inclui o identificador único da venda."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cliente",
+			"item": [
+				{
+					"name": "Criar/Atualizar Cliente",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic {{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nomeFantasia\": null,\n    \"inscricaoMunicipal\": null,\n    \"inscricaoEstadual\": null,\n    \"email\": \"teste@enotas.com.br\",\n    \"telefone\": \"31231231231\",\n    \"nome\": \"Cliente Teste_Postman\",\n    \"cpfCnpj\": \"81882133064\",\n    \"endereco\": {\n        \"cidade\": \"Belo Horizonte\",\n        \"codigoIbgeCidade\": 3106200,\n        \"logradouro\": \"R. Engenheiro Alberto Pontes\",\n        \"numero\": \"427\",\n        \"complemento\": null,\n        \"bairro\": \"Buritis\",\n        \"cep\": \"12412512\"\n    }\n}"
+						},
+						"url": {
+							"raw": "https://app.enotas.com.br/api/clientes",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"clientes"
+							]
+						},
+						"description": "Insere ou atualiza um cliente. O retorno inclui o identificador único do cliente."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Cliente",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic {{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://app.enotas.com.br/api/clientes/:clienteID",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"clientes",
+								":clienteID"
+							],
+							"variable": [
+								{
+									"key": "clienteID",
+									"value": "",
+									"description": "Identificador único do cliente."
+								}
+							]
+						},
+						"description": "Recupera informações do cliente pelo seu identificado único. O retorno inclui os dados do cliente requisitado."
+					},
+					"response": []
+				},
+				{
+					"name": "Filtrar Clientes",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic {{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://app.enotas.com.br/api/clientes/getFilterBy?pageNumber=0&pageSize=10&filter=contains(cpfCnpj , '72870524668')&orderBy=nome desc",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"clientes",
+								"getFilterBy"
+							],
+							"query": [
+								{
+									"key": "pageNumber",
+									"value": "0",
+									"description": "Número da página, sendo 0 o número da primeira página."
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Total de itens a serem retornados por página."
+								},
+								{
+									"key": "filter",
+									"value": "contains(cpfCnpj , '72870524668')",
+									"description": "Filtro para realização da pesquisa."
+								},
+								{
+									"key": "orderBy",
+									"value": "nome desc",
+									"description": "Ordenação dos itens retornados."
+								}
+							]
+						},
+						"description": "Retorna uma lista de clientes encontradas pelo critério de pesquisa e paginação definidos."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Produto",
+			"item": [
+				{
+					"name": "Criar/Atualizar Produto",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Basic {{apiKey}}"
+							},
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Produto Teste_Postman\",\n    \"idExterno\": \"500\",\n    \"valorTotal\": 30,\n    \"diasGarantia\": 15,\n    \"tags\": \"teste;postman\"\n}"
+						},
+						"url": {
+							"raw": "https://app.enotas.com.br/api/produtos",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"produtos"
+							]
+						},
+						"description": "Insere ou atualiza um produto. O retorno inclui o identificador único do produto."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Produto",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic {{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://app.enotas.com.br/api/produtos/:produtoID",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"produtos",
+								":produtoID"
+							],
+							"variable": [
+								{
+									"key": "produtoID",
+									"value": "",
+									"description": "Identificador único do produto."
+								}
+							]
+						},
+						"description": "Recupera informações do produto pelo seu identificado único. O retorno inclui os dados do produto requisitado."
+					},
+					"response": []
+				},
+				{
+					"name": "Filtrar Produtos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic {{apiKey}}",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://app.enotas.com.br/api/produtos/getFilterBy?pageNumber=0&pageSize=10&filter=contains(idExterno, '123')&orderBy=createdAt desc",
+							"protocol": "https",
+							"host": [
+								"app",
+								"enotas",
+								"com",
+								"br"
+							],
+							"path": [
+								"api",
+								"produtos",
+								"getFilterBy"
+							],
+							"query": [
+								{
+									"key": "pageNumber",
+									"value": "0",
+									"description": "Número da página, sendo 0 o número da primeira página."
+								},
+								{
+									"key": "pageSize",
+									"value": "10",
+									"description": "Total de itens a serem retornados por página."
+								},
+								{
+									"key": "filter",
+									"value": "contains(idExterno, '123')",
+									"description": "Filtro para realização da pesquisa."
+								},
+								{
+									"key": "orderBy",
+									"value": "createdAt desc",
+									"description": "Ordenação dos itens retornados."
+								}
+							]
+						},
+						"description": "Retorna uma lista de produtos encontradas pelo critério de pesquisa e paginação definidos."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

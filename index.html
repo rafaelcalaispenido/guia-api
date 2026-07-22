@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia de Implementação — API eNotas Emissor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --c-primary: #14161C;
+    --c-primary-dark: #000000;
+    --c-primary-soft: #EEF0F2;
+    --c-on-primary: #FFFFFF;
+    --c-accent: #FF6900;
+    --c-accent-soft: #FFF1E5;
+    --c-green: #16A34A;
+    --c-green-soft: #E9F9EF;
+    --c-red: #DC2626;
+    --c-red-soft: #FDECEC;
+    --c-page-bg: #1E1E1E;
+    --c-bg: #F4F6FA;
+    --c-surface: #FFFFFF;
+    --c-surface-2: #F8F9FC;
+    --c-text: #14161C;
+    --c-text-muted: #6B7280;
+    --c-text-faint: #9AA1AC;
+    --c-border: #E5E7EB;
+    --c-code-bg: #14161C;
+    --c-code-text: #E5E7EB;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.06);
+    --shadow-md: 0 8px 24px rgba(16,24,40,.08);
+    --radius: 14px;
+  }
+  :root[data-theme="dark"] {
+    --c-page-bg: #101013;
+    --c-bg: #0F1115;
+    --c-surface: #171A21;
+    --c-surface-2: #1D2129;
+    --c-text: #EDEEF1;
+    --c-text-muted: #A1A7B3;
+    --c-text-faint: #6C7280;
+    --c-border: #2A2E38;
+    --c-primary: #F2F3F5;
+    --c-primary-dark: #FFFFFF;
+    --c-primary-soft: #2A2E38;
+    --c-on-primary: #14161C;
+    --c-accent-soft: #3A2416;
+    --c-green-soft: #143222;
+    --c-red-soft: #3A1A1A;
+    --c-code-bg: #0B0D11;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-md: 0 8px 24px rgba(0,0,0,.5);
+  }
+
+  * , *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  * { scrollbar-width: thin; scrollbar-color: var(--c-border) transparent; }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--c-text-faint); background-clip: padding-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--c-page-bg);
+    color: var(--c-text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+  }
+  code, pre, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  a { color: var(--c-primary); }
+  ::selection { background: var(--c-primary-soft); }
+
+  /* ─── APP CARD SHELL (inspired by the onboarding guide) ─── */
+  .app-card {
+    background: var(--c-surface);
+    width: 100%;
+    max-width: 1180px;
+    height: min(900px, 94vh);
+    border-radius: 24px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.45);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--c-border);
+    flex-shrink: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .brand-logo { height: 34px; width: auto; object-fit: contain; display: block; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+  .brand-name { font-size: 15px; font-weight: 700; color: var(--c-text); }
+  .brand-sub { font-size: 11.5px; color: var(--c-text-muted); font-weight: 500; }
+
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 8px;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface-2);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--c-text-muted);
+    transition: background .15s, color .15s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--c-primary-soft); color: var(--c-primary); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn .icon-moon { display: none; }
+  :root[data-theme="dark"] .icon-btn .icon-sun { display: none; }
+  :root[data-theme="dark"] .icon-btn .icon-moon { display: block; }
+
+  /* ─── BODY: SIDEBAR + CONTENT ──────────────────────────── */
+  .card-body { display: flex; flex: 1; min-height: 0; }
+
+  .sidebar {
+    width: 240px; flex-shrink: 0;
+    background: var(--c-surface-2);
+    border-right: 1px solid var(--c-border);
+    padding: 22px 14px;
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--c-text-faint); padding: 0 10px; margin-bottom: 12px;
+  }
+  .side-nav-btn {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    font-family: inherit; font-size: 13.3px; font-weight: 600; text-align: left;
+    background: none; border: none; cursor: pointer; color: var(--c-text-muted);
+    padding: 10px 10px; border-radius: 10px; margin-bottom: 2px;
+    transition: background .15s, color .15s;
+  }
+  .side-nav-btn:hover { background: var(--c-surface); color: var(--c-text); }
+  .side-nav-btn.active { background: var(--c-surface); color: var(--c-primary); box-shadow: var(--shadow-sm); }
+  .side-num {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    background: var(--c-border); color: var(--c-text-faint);
+    font-size: 10.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .side-nav-btn.active .side-num { background: var(--c-primary); color: var(--c-on-primary); }
+
+  .content-panel { flex: 1; overflow-y: auto; padding: 32px 40px 48px; min-width: 0; }
+  .section { display: none; }
+  .section.active { display: block; animation: fadein .25s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: translateY(0);} }
+
+  .section-eyebrow {
+    font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--c-text-muted); margin-bottom: 8px;
+  }
+  .section-title { font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 700; margin-bottom: 10px; letter-spacing: -.01em; }
+  .section-lead { font-size: 15px; color: var(--c-text-muted); max-width: 720px; margin-bottom: 28px; }
+
+  h3.subhead { font-size: 16.5px; font-weight: 700; margin: 32px 0 12px; display: flex; align-items: center; gap: 8px; }
+  h3.subhead:first-of-type { margin-top: 0; }
+
+  .card-footer-mini {
+    padding: 12px 28px; border-top: 1px solid var(--c-border); text-align: center; flex-shrink: 0;
+  }
+  .card-footer-mini p { font-size: 11.5px; color: var(--c-text-faint); }
+
+  @media (max-width: 760px) {
+    body { padding: 0; }
+    .app-card { max-width: 100%; height: 100vh; border-radius: 0; }
+    .card-body { flex-direction: column; overflow-y: auto; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--c-border); overflow-y: visible; padding: 14px; }
+    .side-nav-btn { display: inline-flex; width: auto; margin: 0 4px 6px 0; }
+    .sidebar-label { display: none; }
+    .content-panel { overflow-y: visible; padding: 24px 20px 40px; }
+  }
+
+  /* ─── CARDS / CALLOUTS ─────────────────────────────────── */
+  .card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card + .card { margin-top: 14px; }
+  .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); align-items: stretch; gap: 14px; margin-bottom: 8px; }
+  .card-grid.two { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 760px) { .card-grid, .card-grid.two { grid-template-columns: 1fr; } }
+  .card-grid .card, .card-grid.two .card { height: 100%; }
+
+  .req-card { display: flex; gap: 14px; align-items: flex-start; height: 100%; min-height: 148px; }
+  .req-card > div { min-width: 0; }
+  .req-icon {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: var(--c-surface-2); color: var(--c-text-muted); border: 1px solid var(--c-border);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .req-icon svg { width: 19px; height: 19px; }
+  .req-title { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+  .req-text { font-size: 13px; color: var(--c-text-muted); line-height: 1.6; }
+  .req-text code { font-size: 12px; background: var(--c-surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  .callout {
+    border-radius: 12px; padding: 14px 16px; font-size: 13.5px; line-height: 1.65;
+    display: flex; gap: 10px; align-items: flex-start;
+    border: 1px solid transparent;
+    margin-top: -4px; margin-bottom: 20px;
+  }
+  .callout svg { flex-shrink: 0; margin-top: 1px; width: 17px; height: 17px; }
+  .callout > div { flex: 1 1 auto; min-width: 0; }
+  .callout.warning { background: #F1F2F4; border-color: #D8DADF; color: #3A3F47; }
+  :root[data-theme="dark"] .callout.warning { background: #24262B; border-color: #3A3D44; color: #D6D8DC; }
+  .callout.info { background: #EEF0F2; border-color: #D8DADF; color: #14161C; }
+  :root[data-theme="dark"] .callout.info { background: #23262E; border-color: #383D48; color: #E8EAED; }
+  .callout.success { background: var(--c-green-soft); border-color: #a6e5bb; color: #14532d; }
+  :root[data-theme="dark"] .callout.success { color: #6bd393; }
+  .callout.danger { background: var(--c-red-soft); border-color: #f3b4b4; color: #7f1d1d; }
+  :root[data-theme="dark"] .callout.danger { color: #f29a9a; }
+  .callout strong { font-weight: 700; }
+  .callout + .callout, .callout + .card, .card + .callout { margin-top: 14px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
+  .badge.plan { background: var(--c-primary); color: #fff; }
+  .badge.muted { background: var(--c-surface-2); color: var(--c-text-muted); border: 1px solid var(--c-border); }
+
+  ul.bullet-list { list-style: none; margin: 6px 0 0; }
+  ul.bullet-list li { position: relative; padding-left: 18px; font-size: 13.8px; color: var(--c-text); line-height: 1.7; margin-bottom: 8px; }
+  ul.bullet-list li::before { content: '–'; position: absolute; left: 0; color: var(--c-text-faint); }
+  ul.bullet-list code { font-size: 12.3px; background: var(--c-surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  ol.step-list { list-style: decimal; margin: 4px 0 20px 20px; }
+  ol.step-list li { font-size: 13.8px; color: var(--c-text); line-height: 1.75; margin-bottom: 8px; }
+  ol.step-list li strong { font-weight: 700; }
+  ol.step-list a { color: var(--c-primary); font-weight: 600; }
+
+  /* ─── ENDPOINT TABS ────────────────────────────────────── */
+  .endpoint-tabs {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    background: var(--c-surface-2); border: 1px solid var(--c-border);
+    border-radius: 12px; padding: 5px;
+  }
+  .endpoint-tab-btn {
+    font-family: inherit; border: none; cursor: pointer; background: transparent;
+    font-size: 12.8px; font-weight: 600; color: var(--c-text-muted);
+    padding: 8px 12px; border-radius: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .endpoint-tab-btn.active { background: var(--c-surface); color: var(--c-text); box-shadow: var(--shadow-sm); }
+  .method { font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; letter-spacing: .03em; }
+  .method.get { background: var(--c-primary-soft); color: var(--c-primary-dark); }
+  .method.post { background: var(--c-green-soft); color: var(--c-green); }
+  :root[data-theme="dark"] .method.post { color: #6bd393; }
+
+  .endpoint-panel { display: none; margin-top: 20px; }
+  .endpoint-panel.active { display: block; }
+
+  .endpoint-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .endpoint-path { font-family: ui-monospace, monospace; font-size: 14.5px; font-weight: 600; }
+  .endpoint-desc { font-size: 13.8px; color: var(--c-text-muted); margin-bottom: 16px; }
+
+  /* ─── CODE BLOCKS ──────────────────────────────────────── */
+  .code-block { border-radius: 12px; overflow: hidden; border: 1px solid var(--c-border); margin: 10px 0 16px; }
+  .code-head {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--c-surface-2); padding: 8px 12px; border-bottom: 1px solid var(--c-border);
+  }
+  .code-head span { font-size: 11.5px; font-weight: 700; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .copy-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-family: inherit; font-size: 11.5px; font-weight: 600;
+    background: var(--c-surface); border: 1px solid var(--c-border); color: var(--c-text-muted);
+    border-radius: 6px; padding: 4px 9px; cursor: pointer; transition: all .15s;
+  }
+  .copy-btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
+  .copy-btn.copied { border-color: var(--c-green); color: var(--c-green); }
+  .copy-btn svg { width: 12px; height: 12px; }
+  .code-block pre {
+    background: var(--c-code-bg); color: var(--c-code-text);
+    padding: 16px; overflow-x: auto; font-size: 12.6px; line-height: 1.65;
+  }
+  .code-block pre code { white-space: pre; }
+  .json-key { color: #7dd3fc; }
+  .json-string { color: #a3e635; }
+  .json-number { color: #fbbf24; }
+  .json-bool { color: #f472b6; }
+  .json-null { color: #94a3b8; }
+
+  .notes-list { margin-top: -6px; margin-bottom: 18px; }
+  .notes-list-title { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--c-text-faint); margin-bottom: 8px; }
+  .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+  @media (max-width: 700px) { .notes-grid { grid-template-columns: 1fr; } }
+  .note-item { font-size: 12.6px; color: var(--c-text-muted); padding: 6px 0; border-bottom: 1px dashed var(--c-border); display: flex; gap: 6px; }
+  .note-item code { flex-shrink: 0; color: var(--c-text); font-weight: 600; background: var(--c-surface-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+  /* ─── TABLES ───────────────────────────────────────────── */
+  .table-wrapper { overflow-x: auto; border: 1px solid var(--c-border); border-radius: 12px; margin: 10px 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+  thead th {
+    background: var(--c-surface-2); text-align: left; font-weight: 700; font-size: 11.5px;
+    text-transform: uppercase; letter-spacing: .03em; color: var(--c-text-muted);
+    padding: 10px 14px; border-bottom: 1px solid var(--c-border); white-space: nowrap;
+  }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--c-border); vertical-align: top; color: var(--c-text); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td code { font-size: 12px; background: var(--c-surface-2); padding: 1px 5px; border-radius: 4px; }
+  .num-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px; padding: 0 5px; border-radius: 6px;
+    background: var(--c-primary); color: var(--c-on-primary); font-weight: 700; font-size: 12px;
+  }
+
+  /* ─── ACCORDION (Tips) ─────────────────────────────────── */
+  .accordion { border: 1px solid var(--c-border); border-radius: 12px; cursor: pointer; background: var(--c-surface); margin-bottom: 10px; overflow: hidden; }
+  .accordion.open { border-color: var(--c-primary); }
+  .accordion-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; gap: 10px; }
+  .accordion-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 9px; }
+  .accordion-title svg { flex-shrink: 0; width: 16px; height: 16px; color: var(--c-text-faint); }
+  .acc-arrow { width: 14px; height: 14px; flex-shrink: 0; transition: transform .2s; color: var(--c-text-faint); }
+  .accordion.open .acc-arrow { transform: rotate(180deg); color: var(--c-primary); }
+  .accordion-body { max-height: 0; overflow: hidden; transition: max-height .3s ease; padding: 0 18px; }
+  .accordion-body.open { max-height: 1600px; padding: 0 18px 16px; }
+  .accordion-body p { font-size: 13.3px; color: var(--c-text-muted); line-height: 1.7; }
+  .accordion-body code { font-size: 12.3px; background: var(--c-surface-2); padding: 1px 5px; border-radius: 4px; color: var(--c-text); }
+
+  /* ─── SCENARIO SWITCH ──────────────────────────────────── */
+  .scenario-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .scenario-btn {
+    font-family: inherit; font-size: 12.8px; font-weight: 600; cursor: pointer;
+    border: 1.5px solid var(--c-border); background: var(--c-surface); color: var(--c-text-muted);
+    border-radius: 99px; padding: 7px 16px; transition: all .15s;
+  }
+  .scenario-btn.active { border-color: #9AA1AC; background: #E2E4E8; color: #14161C; }
+  :root[data-theme="dark"] .scenario-btn.active { border-color: #545A66; background: #333844; color: #F2F3F5; }
+  .scenario-panel { display: none; }
+  .scenario-panel.active { display: block; animation: fadein .2s ease; }
+
+  /* ─── POSTMAN MOCK ─────────────────────────────────────── */
+  .pm-steps { display: flex; flex-direction: column; gap: 18px; }
+  .pm-step { display: flex; gap: 16px; }
+  .pm-step-num {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--c-primary); color: var(--c-on-primary);
+    font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pm-step-body { flex: 1; padding-bottom: 4px; }
+  .pm-step-title { font-size: 14.5px; font-weight: 700; margin-bottom: 4px; }
+  .pm-step-text { font-size: 13.3px; color: var(--c-text-muted); line-height: 1.65; margin-bottom: 10px; }
+  .download-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: inherit; font-size: 13px; font-weight: 700; text-decoration: none;
+    background: var(--c-primary); color: var(--c-on-primary);
+    padding: 9px 16px; border-radius: 8px; margin-bottom: 6px;
+    transition: opacity .15s;
+  }
+  .download-btn:hover { opacity: .85; }
+  .download-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  .pm-window {
+    border: 1px solid var(--c-border); border-radius: 10px; overflow: hidden; background: var(--c-surface-2);
+  }
+  .pm-window-bar { display: flex; gap: 5px; padding: 8px 10px; background: var(--c-border); }
+  .pm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-text-faint); opacity: .5; }
+  .pm-url-row { display: flex; align-items: stretch; border-bottom: 1px solid var(--c-border); }
+  .pm-method-chip { background: var(--c-green-soft); color: var(--c-green); font-weight: 800; font-size: 11.5px; padding: 8px 12px; flex-shrink: 0; display:flex; align-items:center; }
+  .pm-url { flex: 1; padding: 8px 12px; font-family: ui-monospace, monospace; font-size: 12.3px; color: var(--c-text); background: var(--c-surface); display: flex; align-items: center; overflow-x: auto; white-space: nowrap; }
+  .pm-tabs-row { display: flex; gap: 2px; padding: 7px 10px 0; background: var(--c-surface); }
+  .pm-tab { font-size: 11.5px; font-weight: 600; padding: 6px 10px; color: var(--c-text-faint); border-bottom: 2px solid transparent; }
+  .pm-tab.on { color: var(--c-primary); border-color: var(--c-primary); }
+  .pm-headers-table { background: var(--c-surface); padding: 6px 10px 10px; }
+  .pm-h-row { display: grid; grid-template-columns: 26px 1fr 1fr; gap: 8px; padding: 6px 4px; font-size: 12px; align-items: center; border-bottom: 1px solid var(--c-border); }
+  .pm-h-row:last-child { border-bottom: none; }
+  .pm-h-check { width: 14px; height: 14px; border-radius: 3px; background: var(--c-primary); flex-shrink: 0; }
+  .pm-h-key { color: var(--c-text-muted); font-family: ui-monospace, monospace; }
+  .pm-h-val { font-family: ui-monospace, monospace; color: var(--c-text); }
+  .pm-h-val.hl { color: var(--c-accent); font-weight: 700; }
+
+  /* ─── TIMELINE (Fluxo) ─────────────────────────────────── */
+  .timeline { position: relative; padding-left: 40px; margin-top: 8px; }
+  .timeline::before { content: ''; position: absolute; left: 15px; top: 6px; bottom: 6px; width: 2px; background: var(--c-border); }
+  .tl-node { position: relative; padding-bottom: 28px; }
+  .tl-node:last-child { padding-bottom: 0; }
+  .tl-dot {
+    position: absolute; left: -40px; top: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--c-primary); color: var(--c-on-primary); display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; z-index: 1; border: 3px solid var(--c-surface);
+  }
+  .tl-node.decision .tl-dot { background: var(--c-accent); color: #fff; }
+  .tl-node.end .tl-dot { background: var(--c-green); color: #fff; }
+  .tl-content { padding-top: 4px; }
+  .tl-title { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+  .tl-text { font-size: 13px; color: var(--c-text-muted); line-height: 1.6; margin-bottom: 8px; }
+  .tl-branches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tl-branch {
+    font-size: 12px; font-weight: 600; background: var(--c-accent-soft); color: #8a4a00;
+    border: 1px solid #f6c98f; padding: 5px 11px; border-radius: 8px;
+  }
+  :root[data-theme="dark"] .tl-branch { color: #ffb066; }
+
+  /* ─── ERROR TABLE STATUS PILL ──────────────────────────── */
+  .status-pill { font-family: ui-monospace, monospace; font-weight: 800; font-size: 13px; padding: 2px 8px; border-radius: 6px; }
+  .status-pill.s2 { background: var(--c-green-soft); color: var(--c-green); }
+  .status-pill.s4 { background: var(--c-accent-soft); color: #8a4a00; }
+  .status-pill.s5 { background: var(--c-red-soft); color: var(--c-red); }
+  :root[data-theme="dark"] .status-pill.s4 { color: #ffb066; }
+
+  @media (max-width: 640px) {
+    .section-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- APP CARD                                                -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="app-card">
+
+  <header class="card-header">
+    <div class="brand">
+      <img src="assets/logo-enotas.png" alt="eNotas" class="brand-logo">
+      <div class="brand-text">
+        <span class="brand-name">eNotas Emissor</span>
+        <span class="brand-sub">Guia de Implementação · API de Vendas</span>
+      </div>
+    </div>
+    <button class="icon-btn" onclick="toggleTheme()" title="Alternar tema" aria-label="Alternar tema claro/escuro">
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </header>
+
+  <div class="card-body">
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SIDEBAR NAV                                       -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <nav class="sidebar" id="side-nav">
+      <p class="sidebar-label">Seções</p>
+      <button class="side-nav-btn active" data-target="sec-prereq"><span class="side-num">1</span>Pré-requisitos</button>
+      <button class="side-nav-btn" data-target="sec-auth"><span class="side-num">2</span>Autenticação</button>
+      <button class="side-nav-btn" data-target="sec-crud"><span class="side-num">3</span>Fluxo CRUD</button>
+      <button class="side-nav-btn" data-target="sec-enums"><span class="side-num">4</span>Enumerações</button>
+      <button class="side-nav-btn" data-target="sec-examples"><span class="side-num">5</span>Exemplos</button>
+      <button class="side-nav-btn" data-target="sec-tips"><span class="side-num">6</span>Dicas</button>
+      <button class="side-nav-btn" data-target="sec-postman"><span class="side-num">7</span>Postman</button>
+      <button class="side-nav-btn" data-target="sec-errors"><span class="side-num">8</span>Erros</button>
+      <button class="side-nav-btn" data-target="sec-flow"><span class="side-num">9</span>Fluxo</button>
+    </nav>
+
+    <main class="content-panel">
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 1. PRÉ-REQUISITOS                                    -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section active" id="sec-prereq">
+    <p class="section-eyebrow">Antes de começar</p>
+    <h1 class="section-title">Pré-requisitos</h1>
+    <p class="section-lead">O que você precisa ter em mãos antes de iniciar a integração com a API eNotas Emissor.</p>
+
+    <div class="callout warning">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div><strong>Apenas os planos Business e Enterprise</strong> contemplam a utilização e o acesso à API. Se sua conta está em outro plano, entre em contato com o time financeiro da eNotas para alteração de plano antes de seguir.</div>
+    </div>
+
+    <h3 class="subhead">Checklist antes de codar</h3>
+    <div class="card-grid">
+      <div class="card req-card">
+        <div class="req-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div>
+          <div class="req-title">API Key ativa</div>
+          <div class="req-text">Chave única de autenticação da sua empresa, disponível no painel eNotas. É obrigatória em toda requisição.</div>
+        </div>
+      </div>
+      <div class="card req-card">
+        <div class="req-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+        <div>
+          <div class="req-title">Plano Business ou Enterprise</div>
+          <div class="req-text">Confirme com sua empresa se o plano contratado contempla o uso da API antes de investir tempo de desenvolvimento.</div>
+        </div>
+      </div>
+      <div class="card req-card">
+        <div class="req-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 18a4 4 0 0 0-8 0M12 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M20 8V4h-4M4 16v4h4"/></svg></div>
+        <div>
+          <div class="req-title">Time técnico disponível</div>
+          <div class="req-text">É imprescindível existir um desenvolvedor ou time de TI para configurar e manter a integração.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="subhead">Ferramentas recomendadas</h3>
+    <div class="card-grid two">
+      <div class="card req-card">
+        <div class="req-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <div>
+          <div class="req-title">Postman</div>
+          <div class="req-text">Ferramenta oficial recomendada pela eNotas. A empresa disponibiliza uma collection pronta (<code>.postman_collection.json</code>) com todos os endpoints configurados.</div>
+        </div>
+      </div>
+      <div class="card req-card">
+        <div class="req-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <div>
+          <div class="req-title">Insomnia / cURL</div>
+          <div class="req-text">Alternativas para testar requisições REST manualmente antes de escrever código de integração definitivo.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="subhead">O que este guia cobre</h3>
+    <ul class="bullet-list">
+      <li>Autenticação via Basic Authentication e tratamento do erro <code>AUT002</code>.</li>
+      <li>O fluxo completo de CRUD: <code>Clientes</code>, <code>Produtos</code> e <code>Vendas</code>, incluindo emissão e cancelamento de NFe.</li>
+      <li>Todas as enumerações usadas pela API (situação da venda, situação da nota, meios de pagamento etc).</li>
+      <li>Exemplos práticos comentados para os cenários mais comuns de integração.</li>
+      <li>Dicas de comportamento automático da API e limites de campos.</li>
+      <li>Guia visual de configuração do Postman e tabela de tratamento de erros.</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 2. AUTENTICAÇÃO                                      -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-auth">
+    <p class="section-eyebrow">Segurança</p>
+    <h1 class="section-title">Autenticação</h1>
+    <p class="section-lead">Todos os métodos da API exigem autenticação prévia por meio da sua API Key, enviada em toda requisição.</p>
+
+    <h3 class="subhead">Chave API</h3>
+    <ol class="step-list">
+      <li>Para ter acesso à sua chave API, acesse o eNotas e realize login em <a href="https://app.enotas.com.br/" target="_blank" rel="noopener">app.enotas.com.br</a>.</li>
+      <li>Clique no nome que aparece no canto superior direito.</li>
+      <li>Selecione <strong>Perfil</strong> e depois <strong>Acessar configurações para nerds</strong>.</li>
+      <li>Irá aparecer a opção <strong>Clique aqui para visualizar sua API Key</strong> — copie a API Key exibida.</li>
+    </ol>
+
+    <h3 class="subhead">URL base</h3>
+    <div class="code-block">
+      <div class="code-head"><span>Base URL</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+      <pre><code>https://app.enotas.com.br/api</code></pre>
+    </div>
+    <div class="callout info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <div>Se você utilizar qualquer outra URL base, receberá <strong>404 – Not Found</strong> ao enviar a requisição.</div>
+    </div>
+
+    <h3 class="subhead">Header de autenticação</h3>
+    <p style="font-size:13.8px;color:var(--c-text-muted);margin-bottom:10px;">Inclua sua API Key no header <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">Authorization</code> usando Basic Authentication:</p>
+    <div class="code-block">
+      <div class="code-head"><span>Header</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+      <pre><code>Authorization: Basic {sua-API-Key-aqui}</code></pre>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Header</th><th>Valor</th><th>Obrigatório</th></tr></thead>
+        <tbody>
+          <tr><td><code>Authorization</code></td><td><code>Basic {sua-API-Key}</code></td><td>Sim</td></tr>
+          <tr><td><code>Content-Type</code></td><td><code>application/json</code></td><td>Sim (em POST)</td></tr>
+          <tr><td><code>Accept</code></td><td><code>application/json</code></td><td>Recomendado</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warning">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div><strong>Erro comum:</strong> espaços em branco ou quebras de linha acidentais no valor da API Key colada no header. Sempre confira se não sobrou nenhum caractere extra antes de enviar.</div>
+    </div>
+
+    <h3 class="subhead">Erro AUT002 — API Key inválida</h3>
+    <p style="font-size:13.8px;color:var(--c-text-muted);margin-bottom:10px;">Se houver qualquer incoerência na API Key informada, a API retorna:</p>
+    <div class="code-block">
+      <div class="code-head"><span>Resposta 401</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+      <pre><code class="code-json">{
+  "codigo": "AUT002",
+  "mensagem": "Acesso negado. APIKey invalida, por favor verifique se setou o header do request corretamente com uma APIKey valida, por exemplo: Authorization: Basic {your-APIKey-here}."
+}</code></pre>
+    </div>
+    <ul class="bullet-list">
+      <li>Revise se a API Key foi copiada por completo, sem cortar caracteres.</li>
+      <li>Remova espaços, quebras de linha ou caracteres invisíveis colados junto com a chave.</li>
+      <li>Confirme que o header está exatamente como <code>Authorization: Basic {sua-API-Key}</code>.</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 3. FLUXO PRINCIPAL (CRUD)                            -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-crud">
+    <p class="section-eyebrow">Endpoints</p>
+    <h1 class="section-title">Fluxo Principal (CRUD)</h1>
+    <p class="section-lead">Os seis endpoints centrais para integrar clientes, produtos e vendas, do cadastro até a emissão e o cancelamento da nota fiscal.</p>
+
+    <div class="endpoint-tabs" data-group="crud">
+      <button class="endpoint-tab-btn active" data-panel="ep-cliente"><span class="method post">POST</span>/clientes</button>
+      <button class="endpoint-tab-btn" data-panel="ep-produto"><span class="method post">POST</span>/produtos</button>
+      <button class="endpoint-tab-btn" data-panel="ep-venda"><span class="method post">POST</span>/vendas</button>
+      <button class="endpoint-tab-btn" data-panel="ep-consultar"><span class="method get">GET</span>/vendas</button>
+      <button class="endpoint-tab-btn" data-panel="ep-emitir"><span class="method post">POST</span>/emitirNFe</button>
+      <button class="endpoint-tab-btn" data-panel="ep-cancelar"><span class="method post">POST</span>/cancelar</button>
+    </div>
+
+    <!-- CLIENTE -->
+    <div class="endpoint-panel active" id="ep-cliente" data-group-panel="crud">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/clientes</span></div>
+      <p class="endpoint-desc">Cria ou atualiza um cliente (tomador da nota). Se o tomador for Pessoa Jurídica, informe o CNPJ — ao enviar a nota para emissão, o sistema busca automaticamente os dados na Receita Federal.</p>
+
+      <div class="code-block">
+        <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "cpfCnpj": "22255588859",
+  "nome": "Cliente Teste API",
+  "email": "teste@enotas.com.br",
+  "telefone": "31231231231",
+  "quandoEmitirNFe": 1,
+  "enviarNfePorEmail": true,
+  "ignorarAtualizacaoAutomatica": true,
+  "endereco": {
+    "pais": "Brasil",
+    "uf": "MG",
+    "codigoIbgeUf": 31,
+    "cidade": "Belo Horizonte",
+    "codigoIbgeCidade": 3106200,
+    "logradouro": "Rua teste",
+    "numero": "427",
+    "complemento": null,
+    "bairro": "Centro",
+    "cep": "30130110"
+  }
+}</code></pre>
+      </div>
+
+      <div class="notes-list">
+        <div class="notes-list-title">Campos importantes</div>
+        <div class="notes-grid">
+          <div class="note-item"><code>nome / email</code>Um dos dois é obrigatório.</div>
+          <div class="note-item"><code>cpfCnpj</code>Opcional. Limite: CPF 11 / CNPJ 14 caracteres.</div>
+          <div class="note-item"><code>endereco</code>Obrigatório ou não conforme regra da prefeitura do tomador.</div>
+          <div class="note-item"><code>endereco.logradouro</code>Limite de 1.000 caracteres.</div>
+          <div class="note-item"><code>endereco.cep</code>Limite de 8 caracteres.</div>
+          <div class="note-item"><code>quandoEmitirNFe</code>Ver enumeração na seção 4.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "clienteId": "7a1a8765-08de-9509-49ba-3d3094d264b4"
+}</code></pre>
+      </div>
+
+      <h3 class="subhead" style="margin-top:24px;">Consultas relacionadas</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Método</th><th>Endpoint</th><th>Descrição</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method get">GET</span></td><td><code>/clientes/getFilterBy</code></td><td>Lista paginada. Parâmetros: <code>pageNumber*</code>, <code>pageSize*</code>, <code>filter</code>, <code>orderBy</code>.</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/clientes/{clienteId}</code></td><td>Consulta cliente pelo ID. Retorna 404 se não encontrado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--c-text-muted);">Campos aceitos em <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">filter</code> / <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">orderBy</code>: <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">createdAt, nome, email, cpfCnpj, uf, cidade</code>. Exemplo: <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">contains(nome,'josé')</code>.</p>
+    </div>
+
+    <!-- PRODUTO -->
+    <div class="endpoint-panel" id="ep-produto" data-group-panel="crud">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/produtos</span></div>
+      <p class="endpoint-desc">Cria ou atualiza um produto/serviço. O retorno inclui o identificador único do produto (id), usado depois na criação da venda.</p>
+
+      <div class="code-block">
+        <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "nome": "Como adestrar cachorros",
+  "idExterno": "12345678",
+  "tipoNFe": 0,
+  "valorTotal": 29,
+  "diasGarantia": 7,
+  "aliquotaIss": "2.00",
+  "tags": "adestramento;cursos"
+}</code></pre>
+      </div>
+
+      <div class="notes-list">
+        <div class="notes-list-title">Campos importantes</div>
+        <div class="notes-grid">
+          <div class="note-item"><code>nome</code>Obrigatório. Limite: 255 caracteres.</div>
+          <div class="note-item"><code>valorTotal</code>Obrigatório. Limite: 22 caracteres.</div>
+          <div class="note-item"><code>aliquotaIss</code>Se omitido, o sistema calcula automaticamente.</div>
+          <div class="note-item"><code>diasGarantia</code>Opcional — depende se a empresa oferece garantia.</div>
+          <div class="note-item"><code>tipoNFe</code>Ver enumeração na seção 4.</div>
+          <div class="note-item"><code>tags</code>Separadas por <code>;</code>. Limite de 60 caracteres.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "produtoId": "2ffab063-644f-4c95-8c37-6ee36ede0100"
+}</code></pre>
+      </div>
+
+      <h3 class="subhead" style="margin-top:24px;">Endpoints auxiliares</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Método</th><th>Endpoint</th><th>Descrição</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method get">GET</span></td><td><code>/produtos/getFilterBy</code></td><td>Lista paginada de produtos (<code>pageNumber*</code>, <code>pageSize*</code>).</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/produtos/{produtoId}</code></td><td>Consulta produto pelo ID. Retorna 404 se não encontrado.</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/produtos/{produtoId}/configurarNFeProduto</code></td><td>Configura informações fiscais específicas para NF-e de Produto.</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/produtos/getClassificacoesTributarias</code></td><td>Lista classificações tributárias válidas (CST/CFOP unificado).</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/produtos/getIndicadoresOperacoes</code></td><td>Lista indicadores de operação para NF-e de Produto.</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/produtos/getnbss</code></td><td>Lista códigos NBS (Nomenclatura Brasileira de Serviços).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VENDA -->
+    <div class="endpoint-panel" id="ep-venda" data-group-panel="crud">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/vendas</span></div>
+      <p class="endpoint-desc">Cria ou atualiza uma venda. Você pode enviar cliente e produto completos (criação simultânea) ou apenas seus IDs, se já existirem. Veja mais combinações na seção <strong>Exemplos Práticos</strong>.</p>
+
+      <div class="code-block">
+        <div class="code-head"><span>Request Body — cliente e produto novos</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "cliente": {
+    "cpfCnpj": "22255588859",
+    "nome": "Cliente Teste API",
+    "email": "teste@enotas.com.br",
+    "telefone": "31231231231",
+    "endereco": {
+      "uf": "MG",
+      "cidade": "Belo Horizonte",
+      "logradouro": "Rua teste",
+      "numero": "427",
+      "bairro": "Centro",
+      "cep": "30130110"
+    }
+  },
+  "produto": {
+    "nome": "Como adestrar cachorros",
+    "idExterno": "324",
+    "valorTotal": 29,
+    "diasGarantia": 7,
+    "tags": "adestramento"
+  },
+  "idExterno": "123456789",
+  "data": "01/03/2026",
+  "vencimento": "11/03/2026",
+  "dataCompetencia": "01/03/2026",
+  "discriminacao": "Curso de adestramento canino",
+  "valorTotal": 29,
+  "quandoEmitirNFe": 0,
+  "enviarNFeCliente": true,
+  "meioPagamento": 9,
+  "tags": "venda online"
+}</code></pre>
+      </div>
+
+      <div class="notes-list">
+        <div class="notes-list-title">Campos importantes</div>
+        <div class="notes-grid">
+          <div class="note-item"><code>data / dataCompetencia</code>Obrigatórios, formato dd/mm/aaaa.</div>
+          <div class="note-item"><code>discriminacao</code>Obrigatório — descreve o que foi vendido.</div>
+          <div class="note-item"><code>valorTotal</code>Obrigatório — valor da venda.</div>
+          <div class="note-item"><code>quandoEmitirNFe</code>Obrigatório. Ver enumeração na seção 4.</div>
+          <div class="note-item"><code>meioPagamento</code>Obrigatório. Ver enumeração na seção 4.</div>
+          <div class="note-item"><code>observacoes</code>Opcional. Limite 1.000 caracteres — aceita quebras de linha, veja Dicas.</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "vendaId": "79f35850-08de-af9f-4f32-f28a4bff2bf0"
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- CONSULTAR -->
+    <div class="endpoint-panel" id="ep-consultar" data-group-panel="crud">
+      <div class="endpoint-head"><span class="method get">GET</span><span class="endpoint-path">/vendas/getFilterBy</span></div>
+      <p class="endpoint-desc">Consulta paginada de vendas, com filtros no estilo OData sobre a venda, sobre a nota fiscal e sobre tags.</p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Parâmetro</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
+          <tbody>
+            <tr><td><code>pageNumber</code></td><td>Sim</td><td>Número da página, começando em 0.</td></tr>
+            <tr><td><code>pageSize</code></td><td>Sim</td><td>Quantidade de itens por página.</td></tr>
+            <tr><td><code>filter</code></td><td>Não</td><td>Filtros sobre a venda: <code>data</code>, <code>dataPagamento</code>, <code>situacao</code>, <code>tags/id</code>, <code>cliente/id</code>, <code>cliente/nome</code>, <code>cliente/cpfCnpj</code>, <code>produto/id</code>.</td></tr>
+            <tr><td><code>nfeFilter</code></td><td>Não</td><td>Filtros sobre a nota: <code>nfe/situacao</code>, <code>nfe/dataCompetencia</code>, <code>nfe/prefeituraNumero</code>, <code>nfe/rpsNumero</code>.</td></tr>
+            <tr><td><code>tagFilter</code></td><td>Não</td><td>Filtro por tag numérica. Ex.: <code>tags/id eq 25358</code>.</td></tr>
+            <tr><td><code>orderBy</code></td><td>Não</td><td><code>data</code>, <code>situacao</code>, <code>valorTotal</code>, <code>cliente/nome</code>, <code>produto/nome</code>, <code>nfe/situacao</code>. Ex.: <code>data desc</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="subhead">Operadores OData suportados</h3>
+      <div class="card-grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="card" style="text-align:center;"><div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--c-primary);font-size:15px;">eq</div><div style="font-size:12px;color:var(--c-text-muted);">igual</div></div>
+        <div class="card" style="text-align:center;"><div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--c-primary);font-size:15px;">contains</div><div style="font-size:12px;color:var(--c-text-muted);">contém</div></div>
+        <div class="card" style="text-align:center;"><div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--c-primary);font-size:15px;">ge</div><div style="font-size:12px;color:var(--c-text-muted);">maior ou igual</div></div>
+        <div class="card" style="text-align:center;"><div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--c-primary);font-size:15px;">le</div><div style="font-size:12px;color:var(--c-text-muted);">menor ou igual</div></div>
+      </div>
+
+      <h3 class="subhead">Exemplos de URL</h3>
+      <div class="code-block">
+        <div class="code-head"><span>Consulta por CPF/CNPJ do cliente</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>GET /clientes/getFilterBy?pageNumber=0&pageSize=50&filter=(contains(cpfCnpj,'22255588859'))</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>Consulta por número da nota fiscal (faixa)</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>GET /vendas/getFilterBy?pageNumber=0&pageSize=10&filter=nfe/prefeituraNumero ge '1000' and nfe/prefeituraNumero le '2000'&orderBy=data desc</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>Consulta venda por ID</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>GET /vendas/{vendaId}</code></pre>
+      </div>
+    </div>
+
+    <!-- EMITIR -->
+    <div class="endpoint-panel" id="ep-emitir" data-group-panel="crud">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/vendas/emitirNFe</span></div>
+      <p class="endpoint-desc">Envia uma ou mais vendas para emissão de NFe. Útil quando <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">quandoEmitirNFe</code> foi configurado como manual/em aberto, ou para reenviar notas com falha.</p>
+
+      <div class="code-block">
+        <div class="code-head"><span>Request Body</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "vendasIds": [
+    "79f35850-08de-af9f-4f32-f28a4bff2bf0",
+    "e1d47c0a-3d6e-49a9-9773-685467de0100"
+  ],
+  "dataCompetencia": "04/03/2026",
+  "enviarNFeCliente": true
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200 — quantidade enviada para emissão</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>2</code></pre>
+      </div>
+
+      <div class="callout info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div>Endpoint auxiliar: <code>POST /vendas/enviarnfeporemail</code> com <code>{"vendaId": "uuid"}</code> reenvia o PDF da nota já emitida por e-mail ao tomador.</div>
+      </div>
+    </div>
+
+    <!-- CANCELAR -->
+    <div class="endpoint-panel" id="ep-cancelar" data-group-panel="crud">
+      <div class="endpoint-head"><span class="method post">POST</span><span class="endpoint-path">/vendas/{vendaId}/cancelar</span></div>
+      <p class="endpoint-desc">Cancela uma venda e solicita o cancelamento da nota fiscal associada junto ao órgão emissor (prefeitura ou Sefaz).</p>
+
+      <div class="code-block">
+        <div class="code-head"><span>Path Parameter</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>POST /vendas/79f35850-08de-af9f-4f32-f28a4bff2bf0/cancelar</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "vendaId": "79f35850-08de-af9f-4f32-f28a4bff2bf0"
+}</code></pre>
+      </div>
+
+      <div class="callout danger">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div><strong>Atenção:</strong> algumas prefeituras não suportam cancelamento ou têm prazo curto para isso. A <strong>NF-e de Produto tem prazo de 24h</strong> para ser cancelada após a emissão. Cancelar a venda não garante que a nota também será cancelada — acompanhe <code>nfe.situacao</code> para confirmar.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 4. ENUMERAÇÕES                                       -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-enums">
+    <p class="section-eyebrow">Referência</p>
+    <h1 class="section-title">Enumerações e Configurações</h1>
+    <p class="section-lead">Valores inteiros usados pelos campos da API para representar estados e opções de configuração.</p>
+
+    <h3 class="subhead">Situação da Venda <span class="badge muted">campo <code>situacao</code></span></h3>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th style="width:60px;">Valor</th><th>Nome</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr><td><span class="num-pill">0</span></td><td><code>EmAberto</code></td><td>O pagamento da venda ainda não foi confirmado. Geralmente ocorre em vendas geradas por boleto.</td></tr>
+          <tr><td><span class="num-pill">2</span></td><td><code>EmGarantia</code></td><td>Pagamento confirmado; se houver período de garantia, a venda aguarda o vencimento dele.</td></tr>
+          <tr><td><span class="num-pill">3</span></td><td><code>Completa</code></td><td>Pagamento confirmado e garantia (se houver) já vencida. Sem garantia, completa automaticamente após o pagamento.</td></tr>
+          <tr><td><span class="num-pill">5</span></td><td><code>Cancelada</code></td><td>Venda cancelada (reembolso, chargeback ou cancelamento manual). Não implica que a nota fiscal também foi cancelada.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Situação da NFe <span class="badge muted">campo <code>nfe.situacao</code></span></h3>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th style="width:60px;">Valor</th><th>Nome</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr><td><span class="num-pill">0</span></td><td><code>Pendente</code></td><td>Venda em garantia ou em aberto aguardando pagamento. Ao concluir, a nota é emitida automaticamente.</td></tr>
+          <tr><td><span class="num-pill">1</span></td><td><code>EmProcessoDeEmissao</code></td><td>Em processamento na prefeitura/Sefaz. Vendas de afiliado/marketplace podem levar até 30 dias; vendas normais, poucos minutos.</td></tr>
+          <tr><td><span class="num-pill">2</span></td><td><code>Emitida</code></td><td>Nota já emitida na prefeitura ou Sefaz.</td></tr>
+          <tr><td><span class="num-pill">3</span></td><td><code>FalhaAoEmitir</code></td><td>Retornou com erro. É preciso corrigir o dado e reenviar.</td></tr>
+          <tr><td><span class="num-pill">4</span></td><td><code>EmProcessoDeCancelamento</code></td><td>A venda foi cancelada e o cancelamento da nota já emitida está em andamento.</td></tr>
+          <tr><td><span class="num-pill">5</span></td><td><code>Cancelada</code></td><td>Cancelamento da nota confirmado na prefeitura ou Sefaz.</td></tr>
+          <tr><td><span class="num-pill">6</span></td><td><code>FalhaAoCancelar</code></td><td>A prefeitura/Sefaz recusou a tentativa de cancelamento.</td></tr>
+          <tr><td><span class="num-pill">7</span></td><td><code>NaoEmitir</code></td><td>Não será emitida automaticamente — requer reenvio manual pelo painel.</td></tr>
+          <tr><td><span class="num-pill">8</span></td><td><code>EnviadoPorEmail</code></td><td>PDF enviado ao tomador (requer e-mail informado e <code>enviarNFeCliente: true</code>).</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Quando Emitir NFe <span class="badge muted">campo <code>quandoEmitirNFe</code></span></h3>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th style="width:60px;">Valor</th><th>Nome</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr><td><span class="num-pill">0</span></td><td><code>NaVenda</code></td><td>Envia a nota para emissão automaticamente assim que a venda for criada.</td></tr>
+          <tr><td><span class="num-pill">1</span></td><td><code>AposGarantia</code></td><td>Envia a nota para emissão automaticamente após o final da garantia.</td></tr>
+          <tr><td><span class="num-pill">2</span></td><td><code>NaoEmitir</code></td><td>Não envia a nota para emissão de forma automática — exige chamada manual a <code>/vendas/emitirNFe</code>.</td></tr>
+          <tr><td><span class="num-pill">3</span></td><td><code>EmAberto</code></td><td>Mantém a nota em aberto, aguardando outra condição para disparar a emissão.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Tipo de NFe <span class="badge muted">campo <code>tipoNFe</code></span></h3>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th style="width:60px;">Valor</th><th>Nome</th><th>Descrição</th></tr></thead>
+        <tbody>
+          <tr><td><span class="num-pill">0</span></td><td><code>NFSe</code></td><td>Nota Fiscal de Serviço Eletrônica.</td></tr>
+          <tr><td><span class="num-pill">1</span></td><td><code>NFe</code></td><td>Nota Fiscal de Produto.</td></tr>
+          <tr><td><span class="num-pill">2</span></td><td><code>Split</code></td><td>NFS-e + NF-e emitidas para a mesma venda.</td></tr>
+          <tr><td><span class="num-pill">3</span></td><td><code>Indefinido</code></td><td>Tipo ainda não definido.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Meios de Pagamento <span class="badge muted">campo <code>meioPagamento</code></span></h3>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th style="width:60px;">Valor</th><th>Nome</th></tr></thead>
+        <tbody>
+          <tr><td><span class="num-pill">0</span></td><td><code>NaoInformado</code></td></tr>
+          <tr><td><span class="num-pill">1</span></td><td><code>BoletoBancario</code></td></tr>
+          <tr><td><span class="num-pill">2</span></td><td><code>CartaoCredito</code></td></tr>
+          <tr><td><span class="num-pill">3</span></td><td><code>Deposito</code></td></tr>
+          <tr><td><span class="num-pill">4</span></td><td><code>TransferenciaBancaria</code></td></tr>
+          <tr><td><span class="num-pill">5</span></td><td><code>BCash</code></td></tr>
+          <tr><td><span class="num-pill">6</span></td><td><code>PayPal</code></td></tr>
+          <tr><td><span class="num-pill">7</span></td><td><code>Outro</code></td></tr>
+          <tr><td><span class="num-pill">8</span></td><td><code>Debito</code></td></tr>
+          <tr><td><span class="num-pill">9</span></td><td><code>Pix</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 5. EXEMPLOS PRÁTICOS                                 -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-examples">
+    <p class="section-eyebrow">Cenários</p>
+    <h1 class="section-title">Exemplos Práticos</h1>
+    <p class="section-lead">Selecione um cenário para ver o JSON completo pronto para copiar e colar.</p>
+
+    <div class="scenario-bar" data-group="scenarios">
+      <button class="scenario-btn active" data-panel="sc-novos">Cliente + Produto novos</button>
+      <button class="scenario-btn" data-panel="sc-existentes">Cliente + Produto existentes (IDs)</button>
+      <button class="scenario-btn" data-panel="sc-garantia">Venda com garantia</button>
+      <button class="scenario-btn" data-panel="sc-semgarantia">Venda sem garantia</button>
+      <button class="scenario-btn" data-panel="sc-cancelamento">Cancelamento</button>
+    </div>
+
+    <div class="scenario-panel active" id="sc-novos" data-group-panel="scenarios">
+      <p style="font-size:13.5px;color:var(--c-text-muted);margin-bottom:10px;">Cria cliente, produto e venda em uma única chamada a <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">POST /vendas</code>.</p>
+      <div class="code-block">
+        <div class="code-head"><span>POST /vendas</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "cliente": {
+    "cpfCnpj": "22255588859",
+    "nome": "Cliente Teste API",
+    "email": "teste@enotas.com.br",
+    "telefone": "31231231231",
+    "endereco": {
+      "uf": "MG",
+      "cidade": "Belo Horizonte",
+      "logradouro": "Rua teste",
+      "numero": "427",
+      "bairro": "Centro",
+      "cep": "30130110"
+    }
+  },
+  "produto": {
+    "nome": "Como adestrar cachorros",
+    "idExterno": "324",
+    "valorTotal": 29,
+    "diasGarantia": 7,
+    "tags": "adestramento"
+  },
+  "idExterno": "55555555",
+  "data": "17/02/2026",
+  "dataCompetencia": "17/02/2026",
+  "discriminacao": "Curso online de adestramento",
+  "valorTotal": 29,
+  "quandoEmitirNFe": 0,
+  "enviarNFeCliente": true,
+  "meioPagamento": 9,
+  "tags": "venda manual"
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="scenario-panel" id="sc-existentes" data-group-panel="scenarios">
+      <p style="font-size:13.5px;color:var(--c-text-muted);margin-bottom:10px;">Quando cliente e produto já foram cadastrados anteriormente, envie apenas os identificadores.</p>
+      <div class="code-block">
+        <div class="code-head"><span>POST /vendas</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "cliente": {
+    "id": "12c4a7c8-4dad-4bad-b0f9-dd3e7f1b0500"
+  },
+  "produto": {
+    "idExterno": "500"
+  },
+  "idExterno": "55555555",
+  "data": "17/02/2026",
+  "dataCompetencia": "27/02/2026",
+  "discriminacao": "Teste",
+  "valorTotal": 10,
+  "quandoEmitirNFe": 0,
+  "enviarNFeCliente": true,
+  "meioPagamento": 3,
+  "tags": "venda teste;venda manual"
+}</code></pre>
+      </div>
+      <div class="callout info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div>Ao referenciar um produto já existente pelo <code>idExterno</code>, ele precisa ter sido criado previamente via <code>POST /produtos</code> com esse mesmo <code>idExterno</code>.</div>
+      </div>
+    </div>
+
+    <div class="scenario-panel" id="sc-garantia" data-group-panel="scenarios">
+      <p style="font-size:13.5px;color:var(--c-text-muted);margin-bottom:10px;">Venda com prazo de garantia: informe <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">vencimento</code> e configure <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">quandoEmitirNFe: 1</code> para só emitir após o vencimento da garantia.</p>
+      <div class="code-block">
+        <div class="code-head"><span>POST /vendas — com garantia</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "cliente": { "id": "12c4a7c8-4dad-4bad-b0f9-dd3e7f1b0500" },
+  "produto": { "idExterno": "324" },
+  "data": "01/03/2026",
+  "vencimento": "31/03/2026",
+  "dataCompetencia": "01/03/2026",
+  "discriminacao": "Curso com garantia de 30 dias",
+  "valorTotal": 297,
+  "quandoEmitirNFe": 1,
+  "enviarNFeCliente": true,
+  "meioPagamento": 2,
+  "tags": "com-garantia"
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="scenario-panel" id="sc-semgarantia" data-group-panel="scenarios">
+      <p style="font-size:13.5px;color:var(--c-text-muted);margin-bottom:10px;">Sem garantia: omita <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">vencimento</code> e use <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">quandoEmitirNFe: 0</code> para emitir a nota imediatamente na criação da venda.</p>
+      <div class="code-block">
+        <div class="code-head"><span>POST /vendas — sem garantia</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "cliente": { "id": "12c4a7c8-4dad-4bad-b0f9-dd3e7f1b0500" },
+  "produto": { "idExterno": "324" },
+  "data": "01/03/2026",
+  "dataCompetencia": "01/03/2026",
+  "discriminacao": "E-book digital — entrega imediata",
+  "valorTotal": 19,
+  "quandoEmitirNFe": 0,
+  "enviarNFeCliente": true,
+  "meioPagamento": 9,
+  "tags": "sem-garantia"
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="scenario-panel" id="sc-cancelamento" data-group-panel="scenarios">
+      <p style="font-size:13.5px;color:var(--c-text-muted);margin-bottom:10px;">Cancelamento de uma venda e da nota associada — envie apenas o ID no path, sem corpo.</p>
+      <div class="code-block">
+        <div class="code-head"><span>POST /vendas/{vendaId}/cancelar</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code>POST /vendas/79f35850-08de-af9f-4f32-f28a4bff2bf0/cancelar</code></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-head"><span>Resposta 200</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+        <pre><code class="code-json">{
+  "vendaId": "79f35850-08de-af9f-4f32-f28a4bff2bf0"
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 6. DICAS DE IMPLEMENTAÇÃO                            -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-tips">
+    <p class="section-eyebrow">Boas práticas</p>
+    <h1 class="section-title">Dicas de Implementação</h1>
+    <p class="section-lead">Comportamentos automáticos, limites de campos e particularidades por prefeitura que costumam gerar dúvida durante a integração.</p>
+
+    <div class="accordion open" onclick="toggleAcc(this)">
+      <div class="accordion-header">
+        <div class="accordion-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>Quebra de linha em observações</div>
+        <svg class="acc-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="accordion-body open">
+        <p>Para quebrar linha no campo <code>observacoes</code>, inclua <code>\r\n</code> ou <code>\n</code> no JSON de envio da venda. <strong>Algumas prefeituras não suportam quebra de linha</strong> — por exemplo, Goiânia/GO. Além disso, não é possível quebrar linha em nota fiscal de Produto (NF-e).</p>
+      </div>
+    </div>
+
+    <div class="accordion" onclick="toggleAcc(this)">
+      <div class="accordion-header">
+        <div class="accordion-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Prazo de cancelamento de NF-e de Produto</div>
+        <svg class="acc-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="accordion-body">
+        <p>A <strong>NF-e de Produto tem prazo de 24 horas</strong> após a emissão para ser cancelada via <code>POST /vendas/{vendaId}/cancelar</code>. Passado esse prazo, o cancelamento pela API deixa de ser aceito pelo Sefaz.</p>
+      </div>
+    </div>
+
+    <div class="accordion" onclick="toggleAcc(this)">
+      <div class="accordion-header">
+        <div class="accordion-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Busca automática de dados na Receita Federal</div>
+        <svg class="acc-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="accordion-body">
+        <p>Se o tomador for Pessoa Jurídica e você informar apenas o <code>cpfCnpj</code>, a API busca automaticamente razão social e endereço na Receita Federal ao enviar a nota para emissão — reduzindo a necessidade de coletar todos os dados manualmente.</p>
+      </div>
+    </div>
+
+    <div class="accordion" onclick="toggleAcc(this)">
+      <div class="accordion-header">
+        <div class="accordion-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Cálculo automático de ISS</div>
+        <svg class="acc-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="accordion-body">
+        <p>Se o campo <code>aliquotaIss</code> não for informado no produto ou na venda, o sistema calcula automaticamente o ISS conforme a alíquota vigente no município de prestação do serviço.</p>
+      </div>
+    </div>
+
+    <div class="accordion" onclick="toggleAcc(this)">
+      <div class="accordion-header">
+        <div class="accordion-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Limites de caracteres por campo</div>
+        <svg class="acc-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="accordion-body">
+        <div class="table-wrapper" style="margin-top:10px;">
+          <table>
+            <thead><tr><th>Campo</th><th>Limite</th></tr></thead>
+            <tbody>
+              <tr><td><code>cliente.nomeFantasia</code></td><td>255 caracteres</td></tr>
+              <tr><td><code>cliente.inscricaoMunicipal / inscricaoEstadual</code></td><td>15 caracteres</td></tr>
+              <tr><td><code>cliente.telefone</code></td><td>10–11 caracteres</td></tr>
+              <tr><td><code>cliente.cpfCnpj</code></td><td>CPF 11 / CNPJ 14 caracteres</td></tr>
+              <tr><td><code>endereco.logradouro</code></td><td>1.000 caracteres</td></tr>
+              <tr><td><code>endereco.numero</code></td><td>10 caracteres</td></tr>
+              <tr><td><code>endereco.complemento</code></td><td>155 caracteres</td></tr>
+              <tr><td><code>endereco.bairro</code></td><td>100 caracteres</td></tr>
+              <tr><td><code>endereco.cep</code></td><td>8 caracteres</td></tr>
+              <tr><td><code>produto.nome</code></td><td>255 caracteres (obrigatório)</td></tr>
+              <tr><td><code>produto.valorTotal</code></td><td>22 caracteres (obrigatório)</td></tr>
+              <tr><td><code>tags</code></td><td>60 caracteres, separadas por <code>;</code></td></tr>
+              <tr><td><code>venda.observacoes</code></td><td>1.000 caracteres</td></tr>
+              <tr><td><code>venda.deducoes</code></td><td>22 caracteres</td></tr>
+              <tr><td><code>porcentagemCofins / Csll / Inss / Ir / Pis</code></td><td>9 caracteres cada</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion" onclick="toggleAcc(this)">
+      <div class="accordion-header">
+        <div class="accordion-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Prefeituras com restrições específicas</div>
+        <svg class="acc-arrow" viewBox="0 0 12 12" fill="none"><path d="M2 4L6 8L10 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="accordion-body">
+        <p>Além da quebra de linha em Goiânia/GO, algumas prefeituras não suportam ou limitam o <strong>cancelamento de NFS-e</strong> após certo prazo. Como cada município tem regras próprias definidas por sua legislação, sempre valide o comportamento específico com o suporte eNotas antes de assumir que um recurso está disponível para a cidade do seu cliente.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 7. GUIA POSTMAN                                      -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-postman">
+    <p class="section-eyebrow">Passo a passo</p>
+    <h1 class="section-title">Guia Postman</h1>
+    <p class="section-lead">Configure o ambiente de testes em poucos minutos usando a collection oficial da eNotas.</p>
+
+    <div class="pm-steps">
+      <div class="pm-step">
+        <div class="pm-step-num">1</div>
+        <div class="pm-step-body">
+          <div class="pm-step-title">Importe a collection</div>
+          <div class="pm-step-text">Baixe a collection abaixo e importe no Postman via <strong>File → Import</strong>.</div>
+          <a class="download-btn" href="assets/enotas-emissor-postman-collection.json" download="ANEXO 02 - API eNotas Emissor.postman_collection.json">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Baixar collection (.json)
+          </a>
+        </div>
+      </div>
+
+      <div class="pm-step">
+        <div class="pm-step-num">2</div>
+        <div class="pm-step-body">
+          <div class="pm-step-title">Crie as variáveis de ambiente</div>
+          <div class="pm-step-text">Crie um Environment no Postman com as variáveis <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">apiKey</code> e <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">content-type</code>. Cada endpoint da collection já referencia essas variáveis na aba Headers.</div>
+        </div>
+      </div>
+
+      <div class="pm-step">
+        <div class="pm-step-num">3</div>
+        <div class="pm-step-body">
+          <div class="pm-step-title">Confira o header de autenticação</div>
+          <div class="pm-step-text">Em cada endpoint, a aba <strong>Headers</strong> já vem parametrizada. Representação da configuração esperada:</div>
+          <div class="pm-window">
+            <div class="pm-window-bar"><div class="pm-dot"></div><div class="pm-dot"></div><div class="pm-dot"></div></div>
+            <div class="pm-url-row">
+              <div class="pm-method-chip">GET</div>
+              <div class="pm-url">https://app.enotas.com.br/api/vendas/:vendaId</div>
+            </div>
+            <div class="pm-tabs-row">
+              <div class="pm-tab">Params</div><div class="pm-tab">Auth</div><div class="pm-tab on">Headers (3)</div><div class="pm-tab">Body</div>
+            </div>
+            <div class="pm-headers-table">
+              <div class="pm-h-row"><div class="pm-h-check"></div><div class="pm-h-key">Authorization</div><div class="pm-h-val hl">Basic {{apiKey}}</div></div>
+              <div class="pm-h-row"><div class="pm-h-check"></div><div class="pm-h-key">Accept</div><div class="pm-h-val">{{content-type}}</div></div>
+              <div class="pm-h-row"><div class="pm-h-check"></div><div class="pm-h-key">Content-Type</div><div class="pm-h-val">application/json</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-step">
+        <div class="pm-step-num">4</div>
+        <div class="pm-step-body">
+          <div class="pm-step-title">Substitua pela sua API Key</div>
+          <div class="pm-step-text">Edite a variável <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">apiKey</code> do Environment e cole sua chave de empresa.</div>
+          <div class="callout warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>Apague qualquer seta, marcação ou espaço extra colado junto ao valor da API Key. Um caractere invisível a mais já é suficiente para gerar o erro <code>AUT002</code>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm-step">
+        <div class="pm-step-num">5</div>
+        <div class="pm-step-body">
+          <div class="pm-step-title">Envie a requisição de teste</div>
+          <div class="pm-step-text">Escolha um endpoint simples, como <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">GET /clientes/getFilterBy</code>, defina <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">pageNumber=0</code> e <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">pageSize=10</code>, e clique em <strong>Send</strong>. Uma resposta <code style="background:var(--c-surface-2);padding:1px 5px;border-radius:4px;">200</code> confirma que a autenticação está funcionando.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 8. TRATAMENTO DE ERROS                                -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-errors">
+    <p class="section-eyebrow">Troubleshooting</p>
+    <h1 class="section-title">Tratamento de Erros</h1>
+    <p class="section-lead">Todo código de resposta segue o padrão HTTP: 2xx indica sucesso, 4xx indica erro do lado do cliente e 5xx, instabilidade da eNotas.</p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th style="width:70px;">Status</th><th>Significado</th><th>Como agir</th></tr></thead>
+        <tbody>
+          <tr><td><span class="status-pill s2">200</span></td><td>Sucesso</td><td>Método executado com sucesso.</td></tr>
+          <tr><td><span class="status-pill s4">400</span></td><td>Falta informação obrigatória</td><td>Algum campo obrigatório não foi enviado no corpo da requisição. Revise contra a documentação do endpoint.</td></tr>
+          <tr><td><span class="status-pill s4">401</span></td><td>Falha ao autenticar</td><td>API Key ausente, incorreta ou com espaço/quebra de linha. Veja o erro <code>AUT002</code> na seção Autenticação.</td></tr>
+          <tr><td><span class="status-pill s4">403</span></td><td>Não autorizado</td><td>A conta não tem permissão para o recurso solicitado — confira o plano contratado (Business/Enterprise).</td></tr>
+          <tr><td><span class="status-pill s4">404</span></td><td>Not Found</td><td>URL inválida ou recurso (cliente/produto/venda) inexistente com o ID informado.</td></tr>
+          <tr><td><span class="status-pill s4">415</span></td><td>Informação inválida no Header</td><td>Confira se <code>Content-Type</code> está definido como <code>application/json</code>.</td></tr>
+          <tr><td><span class="status-pill s5">500</span></td><td>Erro interno</td><td>Instabilidade momentânea na eNotas. Aguarde alguns segundos e tente novamente; persistindo, acione o suporte.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subhead">Código específico: AUT002</h3>
+    <div class="code-block">
+      <div class="code-head"><span>401 — AUT002</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button></div>
+      <pre><code class="code-json">{
+  "codigo": "AUT002",
+  "mensagem": "Acesso negado. APIKey invalida, por favor verifique se setou o header do request corretamente com uma APIKey valida."
+}</code></pre>
+    </div>
+
+    <h3 class="subhead">Checklist de debug</h3>
+    <ul class="bullet-list">
+      <li>Confira se a URL usa exatamente <code>https://app.enotas.com.br/api</code> como base.</li>
+      <li>Valide o JSON enviado em um linter antes de disparar a requisição (chaves e vírgulas são a causa mais comum de 400).</li>
+      <li>Verifique se todos os campos obrigatórios do endpoint (ver seção 3) foram preenchidos.</li>
+      <li>Confirme que o header <code>Content-Type: application/json</code> está presente em toda chamada POST.</li>
+      <li>Em erros 404 de consulta, confirme se o ID pertence à mesma conta/API Key usada na chamada.</li>
+      <li>Em erros 500 recorrentes, registre o horário e o corpo da requisição antes de abrir um chamado com o suporte.</li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- 9. FLUXO DE INTEGRAÇÃO                                -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="section" id="sec-flow">
+    <p class="section-eyebrow">Visão geral</p>
+    <h1 class="section-title">Fluxo de Integração</h1>
+    <p class="section-lead">Sequência típica de chamadas para levar uma venda do cadastro até a nota fiscal emitida — e os pontos de decisão ao longo do caminho.</p>
+
+    <div class="timeline">
+      <div class="tl-node">
+        <div class="tl-dot">1</div>
+        <div class="tl-content">
+          <div class="tl-title">Criar Cliente <span class="badge muted">POST /clientes</span></div>
+          <div class="tl-text">Cadastre o tomador da nota. Pode ser feito isoladamente ou embutido diretamente na criação da venda.</div>
+        </div>
+      </div>
+      <div class="tl-node">
+        <div class="tl-dot">2</div>
+        <div class="tl-content">
+          <div class="tl-title">Criar Produto <span class="badge muted">POST /produtos</span></div>
+          <div class="tl-text">Cadastre o item vendido, com valor e, se aplicável, dias de garantia. Também pode ser embutido na venda.</div>
+        </div>
+      </div>
+      <div class="tl-node">
+        <div class="tl-dot">3</div>
+        <div class="tl-content">
+          <div class="tl-title">Criar Venda <span class="badge muted">POST /vendas</span></div>
+          <div class="tl-text">Vincula cliente e produto, define valores, meio de pagamento e a regra de emissão da nota.</div>
+        </div>
+      </div>
+      <div class="tl-node decision">
+        <div class="tl-dot">?</div>
+        <div class="tl-content">
+          <div class="tl-title">Decisão: quando emitir a NFe</div>
+          <div class="tl-text">Definido pelo campo <code>quandoEmitirNFe</code> no momento da criação da venda.</div>
+          <div class="tl-branches">
+            <span class="tl-branch">0 · Na venda → emite na hora</span>
+            <span class="tl-branch">1 · Após garantia → emite ao vencer</span>
+            <span class="tl-branch">2 · Não emitir → requer chamada manual</span>
+            <span class="tl-branch">3 · Em aberto → aguarda outra condição</span>
+          </div>
+        </div>
+      </div>
+      <div class="tl-node">
+        <div class="tl-dot">4</div>
+        <div class="tl-content">
+          <div class="tl-title">Emitir NFe <span class="badge muted">POST /vendas/emitirNFe</span></div>
+          <div class="tl-text">Chamada automática pela eNotas (cenários 0/1) ou manual pelo seu sistema (cenários 2/3, ou reenvio após falha).</div>
+        </div>
+      </div>
+      <div class="tl-node">
+        <div class="tl-dot">5</div>
+        <div class="tl-content">
+          <div class="tl-title">Acompanhar situação <span class="badge muted">GET /vendas/{vendaId}</span></div>
+          <div class="tl-text">Monitore <code>nfe.situacao</code> até chegar em <code>Emitida (2)</code>. Em caso de <code>FalhaAoEmitir (3)</code>, corrija o dado apontado e reenvie.</div>
+        </div>
+      </div>
+      <div class="tl-node end">
+        <div class="tl-dot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="tl-content">
+          <div class="tl-title">(Opcional) Cancelar venda <span class="badge muted">POST /vendas/{vendaId}/cancelar</span></div>
+          <div class="tl-text">Em caso de reembolso ou chargeback. Lembre-se: NF-e de Produto tem prazo de 24h e algumas prefeituras restringem o cancelamento.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout info" style="margin-top:24px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <div>Este guia resume os pontos mais usados no dia a dia da integração. Para casos avançados (Split de NF-e, tributação municipal detalhada, webhooks), consulte a documentação oficial da eNotas ou acione o suporte técnico.</div>
+    </div>
+  </section>
+
+    </main>
+  </div><!-- /card-body -->
+
+  <div class="card-footer-mini">
+    <p>Guia de referência para integração com a API eNotas Emissor. Consulte sempre a documentação oficial para validar mudanças recentes.</p>
+  </div>
+
+</div><!-- /app-card -->
+
+<script>
+  /* ─── THEME ────────────────────────────────────────── */
+  (function initTheme() {
+    var saved = localStorage.getItem('enotas-guide-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+  function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme');
+    var isDark = current === 'dark';
+    var next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('enotas-guide-theme', next);
+  }
+
+  /* ─── SIDEBAR NAV ──────────────────────────────────── */
+  var sideNavBtns = document.querySelectorAll('#side-nav .side-nav-btn');
+  var contentPanel = document.querySelector('.content-panel');
+  sideNavBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      sideNavBtns.forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('main > .section').forEach(function (s) { s.classList.remove('active'); });
+      btn.classList.add('active');
+      var target = document.getElementById(btn.dataset.target);
+      if (target) target.classList.add('active');
+      history.replaceState(null, '', '#' + btn.dataset.target);
+      if (contentPanel) contentPanel.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    });
+  });
+  (function openFromHash() {
+    var hash = location.hash.replace('#', '');
+    if (!hash) return;
+    var btn = document.querySelector('#side-nav .side-nav-btn[data-target="' + hash + '"]');
+    if (btn) btn.click();
+  })();
+
+  /* ─── GENERIC SUB-TAB GROUPS (endpoint tabs + scenarios) ─── */
+  function wireTabGroup(triggerSelector, panelAttr) {
+    document.querySelectorAll(triggerSelector).forEach(function (group) {
+      var buttons = group.querySelectorAll('[data-panel]');
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          buttons.forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          var panelId = btn.dataset.panel;
+          document.querySelectorAll('[' + panelAttr + ']').forEach(function (p) { p.classList.remove('active'); });
+          var panel = document.getElementById(panelId);
+          if (panel) panel.classList.add('active');
+        });
+      });
+    });
+  }
+  wireTabGroup('.endpoint-tabs', 'data-group-panel');
+  wireTabGroup('.scenario-bar', 'data-group-panel');
+
+  /* ─── ACCORDION ────────────────────────────────────── */
+  function toggleAcc(el) {
+    var body = el.querySelector('.accordion-body');
+    var open = el.classList.toggle('open');
+    body.classList.toggle('open', open);
+  }
+
+  /* ─── COPY TO CLIPBOARD ────────────────────────────── */
+  function copyCode(btn) {
+    var block = btn.closest('.code-block');
+    var codeEl = block.querySelector('pre code');
+    var text = codeEl.textContent;
+    var done = function () {
+      var original = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>Copiado';
+      setTimeout(function () { btn.classList.remove('copied'); btn.innerHTML = original; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    cb();
+  }
+
+  /* ─── JSON SYNTAX HIGHLIGHT ────────────────────────── */
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function highlightJSON(raw) {
+    var escaped = escapeHtml(raw);
+    return escaped.replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+      function (match) {
+        var cls = 'json-number';
+        if (/^"/.test(match)) { cls = /:$/.test(match) ? 'json-key' : 'json-string'; }
+        else if (/true|false/.test(match)) { cls = 'json-bool'; }
+        else if (/null/.test(match)) { cls = 'json-null'; }
+        return '<span class="' + cls + '">' + match + '</span>';
+      }
+    );
+  }
+  document.querySelectorAll('code.code-json').forEach(function (el) {
+    el.innerHTML = highlightJSON(el.textContent);
+  });
+
+</script>
+</body>
+</html>
