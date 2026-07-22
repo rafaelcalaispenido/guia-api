@@ -1,0 +1,323 @@
+{
+	"info": {
+		"_postman_id": "0bbda742-b2fb-4c17-92d8-0ec0b32cc37b",
+		"name": "API eNotas Emissor - Webhook",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16443479"
+	},
+	"item": [
+		{
+			"name": "Criar Webhook",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Basic {{apiKey}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"uri\": \"https://en9xmcoiyfqo4.x.pipedream.net\",\n\"events\": [\"VendaEmGarantia\", \"VendaCompleta\", \"VendaCancelada\",\n\"NFeEmProcessoDeEmissao\", \"NFeEmitida\", \"NFeFalhaAoEmitir\",\n\"NFeEmProcessoDeCancelamento\", \"NFeCancelada\", \"NFeFalhaAoCancelar\"],\n\"enabled\": true\n}"
+				},
+				"url": {
+					"raw": "https://app.enotas.com.br/api/webhooks",
+					"protocol": "https",
+					"host": [
+						"app",
+						"enotas",
+						"com",
+						"br"
+					],
+					"path": [
+						"api",
+						"webhooks"
+					]
+				},
+				"description": "Insere ou atualiza uma venda. O retorno inclui o identificador único da venda."
+			},
+			"response": []
+		},
+		{
+			"name": "Reenviar Webhook",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Basic {{apiKey}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://app.enotas.com.br/api/webhooks/:vendaId/reenviar",
+					"protocol": "https",
+					"host": [
+						"app",
+						"enotas",
+						"com",
+						"br"
+					],
+					"path": [
+						"api",
+						"webhooks",
+						":vendaId",
+						"reenviar"
+					],
+					"variable": [
+						{
+							"key": "vendaId",
+							"value": "f3ace0f2-d8d9-4126-92bf-e451cd770800"
+						}
+					]
+				},
+				"description": "Insere ou atualiza uma venda. O retorno inclui o identificador único da venda."
+			},
+			"response": []
+		},
+		{
+			"name": "Listar Webhooks",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Basic {{apiKey}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "https://app.enotas.com.br/api/webhooks/getFilterBy?pageNumber=0&pageSize=10&filter=enabled eq true",
+					"protocol": "https",
+					"host": [
+						"app",
+						"enotas",
+						"com",
+						"br"
+					],
+					"path": [
+						"api",
+						"webhooks",
+						"getFilterBy"
+					],
+					"query": [
+						{
+							"key": "pageNumber",
+							"value": "0",
+							"description": "Número da página, sendo 0 o número da primeira página."
+						},
+						{
+							"key": "pageSize",
+							"value": "10",
+							"description": "Total de itens a serem retornados por página."
+						},
+						{
+							"key": "filter",
+							"value": "enabled eq true",
+							"description": "Filtro para realização da pesquisa.\nExemplos de filtro: enabled eq true"
+						}
+					]
+				},
+				"description": "Recupera informações da venda pelo seu identificado único. O retorno inclui os dados da venda requisitada."
+			},
+			"response": []
+		},
+		{
+			"name": "Tentativas de envios Webhooks",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Basic {{apiKey}}",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://app.enotas.com.br/api/webhooks/{vendaId}/tentativas?vendaId=&pageNumber=0&pageSize=10",
+					"protocol": "https",
+					"host": [
+						"app",
+						"enotas",
+						"com",
+						"br"
+					],
+					"path": [
+						"api",
+						"webhooks",
+						"{vendaId}",
+						"tentativas"
+					],
+					"query": [
+						{
+							"key": "vendaId",
+							"value": "",
+							"description": "ID da venda"
+						},
+						{
+							"key": "pageNumber",
+							"value": "0",
+							"description": "Número da página, sendo 0 o número da primeira página."
+						},
+						{
+							"key": "pageSize",
+							"value": "10",
+							"description": "Quantidade de itens retornados por página"
+						}
+					]
+				},
+				"description": "Recupera informações da venda pelo seu identificado único. O retorno inclui os dados da venda requisitada."
+			},
+			"response": []
+		},
+		{
+			"name": "Consultar Webhook",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"type": "text",
+						"value": "Basic {{apiKey}}"
+					},
+					{
+						"key": "Accept",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "https://app.enotas.com.br/api/webhooks/{webHookId}?webHookId=",
+					"protocol": "https",
+					"host": [
+						"app",
+						"enotas",
+						"com",
+						"br"
+					],
+					"path": [
+						"api",
+						"webhooks",
+						"{webHookId}"
+					],
+					"query": [
+						{
+							"key": "webHookId",
+							"value": "",
+							"description": "Identificador único do Webhook"
+						}
+					]
+				},
+				"description": "Recupera informações da venda pelo seu identificado único. O retorno inclui os dados da venda requisitada."
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
