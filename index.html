@@ -199,7 +199,7 @@
     display: flex; align-items: center; justify-content: center;
   }
   .req-icon svg { width: 19px; height: 19px; }
-  .req-title { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+  .req-title { font-size: 14.5px; font-weight: 700; line-height: 1.35; margin-bottom: 3px; min-height: 2.7em; display: flex; align-items: flex-start; }
   .req-text { font-size: 13px; color: var(--c-text-muted); line-height: 1.6; }
   .req-text code { font-size: 12px; background: var(--c-surface-2); padding: 1px 5px; border-radius: 4px; }
 
@@ -358,6 +358,7 @@
     flex-shrink: 0;
   }
   .pm-step-body { flex: 1; padding-bottom: 4px; }
+  .pm-step-body .callout:last-child { margin-bottom: 0; }
   .pm-step-title { font-size: 14.5px; font-weight: 700; margin-bottom: 4px; }
   .pm-step-text { font-size: 13.3px; color: var(--c-text-muted); line-height: 1.65; margin-bottom: 10px; }
   .download-btn {
@@ -573,9 +574,9 @@
     <h3 class="subhead">Chave API</h3>
     <ol class="step-list">
       <li>Para ter acesso à sua chave API, acesse o eNotas e realize login em <a href="https://app.enotas.com.br/" target="_blank" rel="noopener">app.enotas.com.br</a>.</li>
-      <li>Clique no nome que aparece no canto superior direito.</li>
-      <li>Selecione <strong>Perfil</strong> e depois <strong>Acessar configurações para nerds</strong>.</li>
-      <li>Irá aparecer a opção <strong>Clique aqui para visualizar sua API Key</strong> — copie a API Key exibida.</li>
+      <li>Clique em <strong>AJUDA</strong> que aparece no canto superior direito.</li>
+      <li>Selecione <strong>API e Integração</strong> e depois <strong>Como integrar com a API de Vendas</strong>.</li>
+      <li>Irá aparecer a opção <strong>APIKey</strong> — copie a API Key exibida.</li>
     </ol>
 
     <h3 class="subhead">URL base</h3>
@@ -1665,7 +1666,6 @@ console.log(data);</code></pre>
         </div>
       </div>
     </div>
-
   </section>
 
   <!-- ══════════════════════════════════════════════════ -->
